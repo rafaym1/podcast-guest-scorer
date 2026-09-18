@@ -9,7 +9,7 @@
 <body>
   <header class="topbar">
     <div class="topbar-inner">
-      <a class="brand" href="{{ url_for('admin_home') }}">Podcast Automation</a>
+      <a class="brand" href="{{ url_for('dashboard', slug=slug) if slug else url_for('home') }}">Podcast Automation</a>
       {% if slug %}
         <nav class="nav">
           <a href="{{ url_for('dashboard', slug=slug) }}">Ranked Guests</a>

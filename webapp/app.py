@@ -410,7 +410,6 @@ def topics_new(slug):
 
 
 @app.route("/admin/clients/new", methods=["GET", "POST"])
-@require_admin
 def new_client(slug=None):
     if request.method == "GET":
         return render_template("new_client.html", error=None)
