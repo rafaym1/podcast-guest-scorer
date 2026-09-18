@@ -294,7 +294,12 @@ def find_new(slug):
 
         candidates = engine.extract_candidates(criteria, search_results, engine.DEFAULT_MODEL, profile=profile)[: criteria["max_candidates"]]
         if not candidates:
-            return render_template("find_form.html", slug=slug, error="No named candidates could be extracted - try broadening the criteria.", form=criteria, welcome=None)
+            return render_template(
+                "find_form.html", slug=slug, welcome=None, form=criteria,
+                error="Found pages, but none named a specific person to extract (often means the results were "
+                      "market reports/investor lists rather than profiles - try a more specific or person-focused topic).",
+                searched=search_results,
+            )
 
         for candidate in candidates:
             record = engine.score_guest(rubric, candidate, engine.DEFAULT_MODEL, "sourced", "web-search", profile=profile)

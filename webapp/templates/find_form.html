@@ -32,4 +32,15 @@
     <button class="btn btn-primary" type="submit">Search &amp; Score</button>
     <p class="hint">Searches the web, then scores every candidate found against your rubric. Can take a minute or two.</p>
   </form>
+
+  {% if searched %}
+    <div class="searched-results">
+      <p class="hint">What the search actually found (this is why nothing was extracted - narrow the topic toward specific people, not the market):</p>
+      <ul class="searched-list">
+        {% for r in searched %}
+          <li><a href="{{ r.url }}" target="_blank" rel="noopener">{{ r.title }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
 {% endblock %}
