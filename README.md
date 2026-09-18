@@ -122,6 +122,16 @@ Pages:
   scoring (never auto-scores straight from the upload). Images/PDFs go
   through Gemini's vision directly; `.docx` gets text-extracted first
   (`python-docx`) then read the same way as a manual pitch.
+- **Find Topics** — before you even have a guest in mind: enter an optional
+  seed ("anything specific on your mind?"), what you've covered recently (to
+  avoid repeats), and a trending-vs-evergreen preference. Runs two real
+  searches - Tavily in news mode (`topic=news`, last 14 days) for what's
+  actually happening, and a second discussion-flavored search for what
+  people are debating - then the model proposes 4-5 specific episode angles
+  grounded in that real signal, not generic categories. Each comes with a
+  "Find a Guest for This" button that hands off straight into Find Guests
+  with the topic pre-filled (`build_topic_search_queries()` /
+  `generate_topic_ideas()` in `score.py`).
 - **Find Guests** — search criteria form; leave "Topic" blank and it falls
   back to the show profile's industry/target guest description. The query
   sent to the web is phrased as "profile or interview with a &lt;role&gt;

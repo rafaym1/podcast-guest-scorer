@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Find Topics{% endblock %}
+{% block content %}
+  <div class="page-header"><h1>Find Topics</h1></div>
+  <p class="hint intro-hint">Pulls real news and online discussion for your show's niche, then proposes specific episode angles - not generic categories. Pick one and go straight to finding a guest for it.</p>
+
+  <form class="form-card" method="post">
+    {% if error %}<div class="alert">{{ error }}</div>{% endif %}
+    <label>
+      Anything specific on your mind? (optional)
+      <input type="text" name="seed" value="{{ form.seed or '' }}" placeholder="e.g. the new EU AI Act enforcement, or leave blank to use your show profile">
+    </label>
+    <label>
+      Topics you've covered recently (optional, avoids repeats)
+      <textarea name="avoid" rows="2" placeholder="e.g. we just did an episode on RAG pipelines and one on AI agents">{{ form.avoid or '' }}</textarea>
+    </label>
+    <label>
+      Recency
+      <select name="recency">
+        <option value="trending" {{ 'selected' if form.recency == 'trending' or not form.recency else '' }}>Trending this week - timely, news-driven</option>
+        <option value="evergreen" {{ 'selected' if form.recency == 'evergreen' else '' }}>Evergreen - doesn't need to be timely</option>
+      </select>
+    </label>
+    <button class="btn btn-primary" type="submit">Find Topics</button>
+    <p class="hint">Searches recent news and online discussion, then proposes 4-5 specific angles. Takes 15-30 seconds.</p>
+  </form>
+
+  {% if topics %}
+    <div class="topic-list">
+      {% for t in topics %}
+        <div class="topic-card">
+          <h3>{{ t.title }}</h3>
+          <p>{{ t.angle }}</p>
+          <a class="btn btn-primary" href="{{ url_for('find_new', slug=slug, topic=t.guest_search_topic) }}">Find a Guest for This</a>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endblock %}

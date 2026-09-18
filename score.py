@@ -264,23 +264,23 @@ def call_llm(prompt, model=DEFAULT_MODEL, attempts=4):
     return with_retry(lambda: call_once(prompt, model), f"Model '{model}'", attempts)
 
 
-def search_web(query, max_results=10):
+def search_web(query, max_results=10, topic="general", days=None):
     api_key = os.environ.get("TAVILY_API_KEY")
     if not api_key:
         sys.exit("ERROR: set the TAVILY_API_KEY environment variable (or add it to .env) first. Free key at tavily.com.")
 
+    payload = {
+        "api_key": api_key,
+        "query": query,
+        "search_depth": "advanced",
+        "max_results": max_results,
+        "topic": topic,
+    }
+    if days:
+        payload["days"] = days
+
     try:
-        data = post_json(
-            TAVILY_API_URL,
-            {
-                "api_key": api_key,
-                "query": query,
-                "search_depth": "advanced",
-                "max_results": max_results,
-            },
-            {"Content-Type": "application/json"},
-            "Tavily API",
-        )
+        data = post_json(TAVILY_API_URL, payload, {"Content-Type": "application/json"}, "Tavily API")
     except RuntimeError as e:
         sys.exit(str(e))
     return data.get("results", [])
@@ -381,6 +381,69 @@ Respond with ONLY valid JSON: {{"explanation": "<your 2-3 sentences>"}}"""
         return result.get("explanation", "").strip()
     except SystemExit:
         return ""
+
+
+def build_topic_search_queries(profile, seed):
+    """One news-mode query (what's actually happening right now) and one
+    discussion-mode query (what people are actually arguing about) - these
+    surface different, complementary raw material for topic generation."""
+    profile = profile or {}
+    industry = profile.get("industry", "")
+    base = seed or profile.get("show_description") or profile.get("target_guest_profile") or industry
+
+    news_query = f"latest news and developments in {industry}" if industry else "latest news"
+    if base and base != industry:
+        news_query += f": {base}"
+
+    discussion_query = f"what people are debating, asking, and disagreeing about regarding {industry or base} right now, reddit and forum discussion"
+    if base and base != industry:
+        discussion_query += f", specifically around {base}"
+
+    return news_query.strip(), discussion_query.strip()
+
+
+def generate_topic_ideas(profile, seed, avoid, recency, news_results, discussion_results, model=DEFAULT_MODEL):
+    profile = profile or {}
+    news_text = "\n".join(f'- "{r.get("title", "")}"' for r in news_results[:10]) or "(nothing found)"
+    discussion_text = "\n".join(f'- "{r.get("title", "")}"' for r in discussion_results[:10]) or "(nothing found)"
+    seed_text = f"\nHOST'S SPECIFIC INTEREST RIGHT NOW: {seed}" if seed else ""
+    avoid_text = f"\nALREADY COVERED RECENTLY - DO NOT REPEAT THESE: {avoid}" if avoid else ""
+
+    prompt = f"""You are a podcast producer helping a host find their next episode topics.
+
+SHOW PROFILE:
+- Show: {profile.get("show_name", "")}
+- Industry/field: {profile.get("industry", "")}
+- What the show covers: {profile.get("show_description", "")}
+- Target guest: {profile.get("target_guest_profile", "")}
+{seed_text}{avoid_text}
+
+RECENCY PREFERENCE: {recency}
+
+RECENT NEWS FOUND:
+{news_text}
+
+COMMUNITY DISCUSSION/DEBATE FOUND:
+{discussion_text}
+
+Using ONLY signal from the above (don't invent events that aren't reflected there), propose 4-5 specific, compelling
+episode topics. Each must be a specific angle or question, not a vague category ("AI trends" is bad; "Why enterprise
+AI pilots keep failing at the procurement stage, not the model" is good). Prefer topics grounded in something real
+happening right now over generic evergreen ideas, unless the recency preference says otherwise. For each, also write
+a short phrase for finding a GUEST who could speak to that specific angle (a kind of person, not the topic itself).
+
+Respond with ONLY valid JSON, no markdown fences:
+{{
+  "topics": [
+    {{
+      "title": "<punchy episode topic, one line>",
+      "angle": "<1-2 sentences: the specific angle and why it's timely right now>",
+      "guest_search_topic": "<short phrase describing who could speak to this>"
+    }}
+  ]
+}}"""
+    result = call_llm(prompt, model=model)
+    return result.get("topics", [])
 
 
 GUEST_FIELDS_INSTRUCTION = """Extract information about a potential podcast guest from this document (could be an

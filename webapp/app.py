@@ -271,7 +271,8 @@ def find_new(slug):
     if not load_profile(paths).get("onboarded", True):
         return redirect(url_for("onboarding_profile", slug=slug))
     if request.method == "GET":
-        return render_template("find_form.html", slug=slug, error=None, form={}, welcome=request.args.get("welcome"))
+        prefill = {"topic": request.args.get("topic", "")} if request.args.get("topic") else {}
+        return render_template("find_form.html", slug=slug, error=None, form=prefill, welcome=request.args.get("welcome"))
 
     criteria = {
         "topic": request.form.get("topic", "").strip(),
@@ -311,6 +312,38 @@ def find_new(slug):
         return render_template("find_form.html", slug=slug, error=str(e), form=criteria, welcome=None)
 
     return redirect(url_for("dashboard", slug=slug, source="sourced"))
+
+
+@app.route("/c/<slug>/topics/new", methods=["GET", "POST"])
+def topics_new(slug):
+    paths = client_paths(slug)
+    if not load_profile(paths).get("onboarded", True):
+        return redirect(url_for("onboarding_profile", slug=slug))
+    profile = load_profile(paths)
+
+    if request.method == "GET":
+        return render_template("topics_form.html", slug=slug, error=None, form={}, topics=None)
+
+    seed = request.form.get("seed", "").strip()
+    avoid = request.form.get("avoid", "").strip()
+    recency = request.form.get("recency", "trending")
+    form = {"seed": seed, "avoid": avoid, "recency": recency}
+
+    news_query, discussion_query = engine.build_topic_search_queries(profile, seed)
+    try:
+        news_results = engine.search_web(news_query, max_results=8, topic="news", days=14)
+        discussion_results = engine.search_web(discussion_query, max_results=8)
+        topics = engine.generate_topic_ideas(profile, seed, avoid, recency, news_results, discussion_results, engine.DEFAULT_MODEL)
+    except SystemExit as e:
+        return render_template("topics_form.html", slug=slug, error=str(e), form=form, topics=None)
+
+    if not topics:
+        return render_template(
+            "topics_form.html", slug=slug, form=form, topics=None,
+            error="Couldn't generate topics from what was found - try a more specific seed, or check your show profile has enough detail.",
+        )
+
+    return render_template("topics_form.html", slug=slug, error=None, form=form, topics=topics)
 
 
 @app.route("/admin/clients/new", methods=["GET", "POST"])
