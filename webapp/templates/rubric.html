@@ -25,7 +25,7 @@
           <input type="hidden" name="key" value="{{ c.key }}">
           <div class="criterion-row-top">
             <input type="text" name="label" value="{{ c.label }}" placeholder="Criterion name" class="criterion-label" required>
-            <input type="number" name="weight" value="{{ c.weight }}" min="1" max="50" class="criterion-weight">
+            <input type="number" name="weight" value="{{ c.weight }}" min="1" max="10" class="criterion-weight">
             <span class="pts-label">pts</span>
             <button type="button" class="btn btn-remove" onclick="this.closest('.criterion-row').remove(); updateTotal();">Remove</button>
           </div>
@@ -46,7 +46,7 @@
       <input type="hidden" name="key" value="">
       <div class="criterion-row-top">
         <input type="text" name="label" value="" placeholder="Criterion name" class="criterion-label" required>
-        <input type="number" name="weight" value="5" min="1" max="50" class="criterion-weight">
+        <input type="number" name="weight" value="5" min="1" max="10" class="criterion-weight">
         <span class="pts-label">pts</span>
         <button type="button" class="btn btn-remove" onclick="this.closest('.criterion-row').remove(); updateTotal();">Remove</button>
       </div>

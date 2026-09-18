@@ -93,7 +93,7 @@ def normalize_rubric(name, labels, weights, guidances, keys):
         if not label:
             continue
         try:
-            weight = max(1, int(weight))
+            weight = min(10, max(1, int(weight)))
         except (TypeError, ValueError):
             weight = 5
         key = (key or "").strip() or slugify_key(label, used_keys)
