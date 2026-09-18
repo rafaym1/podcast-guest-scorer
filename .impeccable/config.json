@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "flat-type-hierarchy",
+        "value": "*",
+        "files": [
+          "webapp/templates/landing.html"
+        ],
+        "createdAt": "2026-09-18T14:10:01.022Z",
+        "reason": "Claude verified via getComputedStyle at 1280px/700px/639px/375px widths: h1/h2, h2/h3, and h3/body ratios are 1.30-1.38x at every width, well above the 1.25x threshold. Confirmed 3 separate times across the session, including immediately before this suppression. Static analysis appears not to fully resolve the media-query-adjusted cascade the way a browser renders it."
+      }
+    ]
+  }
+}
