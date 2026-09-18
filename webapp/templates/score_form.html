@@ -2,8 +2,19 @@
 {% block title %}Score a Pitch{% endblock %}
 {% block content %}
   <div class="page-header"><h1>Score a Pitch</h1></div>
+
+  <form class="form-card upload-card" method="post" action="{{ url_for('score_parse', slug=slug) }}" enctype="multipart/form-data">
+    <label>
+      Upload a pitch instead (screenshot, PDF, or .docx)
+      <input type="file" name="upload_file" accept=".png,.jpg,.jpeg,.webp,.pdf,.docx">
+    </label>
+    <p class="hint">Extracts the fields below for you to review and edit - it doesn't score automatically.</p>
+    <button class="btn" type="submit">Extract Fields From File</button>
+  </form>
+
   <form class="form-card" method="post">
     {% if error %}<div class="alert">{{ error }}</div>{% endif %}
+    {% if notice %}<div class="notice">{{ notice }}</div>{% endif %}
     <label>
       Guest name
       <input type="text" name="name" value="{{ form.name or '' }}" required>

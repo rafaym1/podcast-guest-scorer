@@ -19,7 +19,9 @@ Requires:
 Both can live in .env instead of real env vars.
 """
 
+import base64
 import csv
+import io
 import json
 import os
 import sys
@@ -118,15 +120,19 @@ def extract_json(text):
     return json.loads(text[start:end + 1])
 
 
-def call_gemini_once(prompt, model):
+def call_gemini_once(prompt, model, file_part=None):
     api_key = os.environ.get("GOOGLE_API_KEY")
     if not api_key:
         sys.exit("ERROR: set the GOOGLE_API_KEY environment variable (or add it to .env) first.")
 
+    parts = [{"text": prompt}]
+    if file_part:
+        parts.append(file_part)
+
     data = post_json(
         GEMINI_API_URL.format(model=model, key=api_key),
         {
-            "contents": [{"parts": [{"text": prompt}]}],
+            "contents": [{"parts": parts}],
             "generationConfig": {"maxOutputTokens": 1500},
         },
         {"Content-Type": "application/json"},
@@ -137,8 +143,8 @@ def call_gemini_once(prompt, model):
     candidates = data.get("candidates") or []
     if not candidates:
         raise RuntimeError(f"Gemini returned no candidates: {data}")
-    parts = candidates[0].get("content", {}).get("parts", [])
-    text = "".join(p.get("text", "") for p in parts)
+    parts_out = candidates[0].get("content", {}).get("parts", [])
+    text = "".join(p.get("text", "") for p in parts_out)
     return extract_json(text)
 
 
@@ -159,22 +165,24 @@ def call_openrouter_once(prompt, model):
     return extract_json(text)
 
 
-def call_llm(prompt, model=DEFAULT_MODEL, attempts=4):
-    # OpenRouter model ids are always "org/model" (e.g. "google/gemma-4-31b-it:free").
-    # A bare name like "gemini-3.5-flash-lite" means: call Google directly.
-    call_once = call_openrouter_once if "/" in model else call_gemini_once
-
+def with_retry(fn, label, attempts=4):
     backoffs = [0, 5, 15, 30]
     last_error = None
     for attempt in range(attempts):
         time.sleep(backoffs[min(attempt, len(backoffs) - 1)])
         try:
-            return call_once(prompt, model)
+            return fn()
         except (RuntimeError, ValueError, json.JSONDecodeError) as e:
             last_error = str(e)
             continue
+    sys.exit(f"{label} failed {attempts}x.\nLast error: {last_error}")
 
-    sys.exit(f"Model '{model}' failed {attempts}x - try a different --model.\nLast error: {last_error}")
+
+def call_llm(prompt, model=DEFAULT_MODEL, attempts=4):
+    # OpenRouter model ids are always "org/model" (e.g. "google/gemma-4-31b-it:free").
+    # A bare name like "gemini-3.5-flash-lite" means: call Google directly.
+    call_once = call_openrouter_once if "/" in model else call_gemini_once
+    return with_retry(lambda: call_once(prompt, model), f"Model '{model}'", attempts)
 
 
 def search_web(query, max_results=10):
@@ -245,6 +253,53 @@ Respond with ONLY valid JSON, no markdown fences, matching exactly this shape:
 }}"""
     result = call_llm(prompt, model=model)
     return result.get("candidates", [])
+
+
+GUEST_FIELDS_INSTRUCTION = """Extract information about a potential podcast guest from this document (could be an
+email pitch, a LinkedIn profile screenshot, a bio page, a one-pager, etc). Use ONLY facts present in the document -
+never invent anything. Leave a field as an empty string if it isn't present.
+
+Respond with ONLY valid JSON, no markdown fences, matching exactly this shape:
+{
+  "name": "<their full name>",
+  "bio": "<1-3 sentence background/credentials, facts only>",
+  "pitch_text": "<what they're pitching or proposing to talk about, if present - else empty string>",
+  "links": "<comma-separated URLs/handles found in the document, if any>"
+}"""
+
+# File uploads always parse via direct Gemini (multimodal), regardless of SCORER_MODEL,
+# since that's the only provider path wired up for image/PDF understanding here.
+PARSE_MODEL = DEFAULT_MODEL if "/" not in DEFAULT_MODEL else "gemini-3.5-flash-lite"
+
+SUPPORTED_UPLOAD_TYPES = {
+    "image/png", "image/jpeg", "image/jpg", "image/webp",
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+}
+
+
+def extract_docx_text(file_bytes):
+    import docx
+    doc = docx.Document(io.BytesIO(file_bytes))
+    return "\n".join(p.text for p in doc.paragraphs if p.text.strip())
+
+
+def extract_guest_from_file(file_bytes, mime_type, filename=""):
+    if mime_type not in SUPPORTED_UPLOAD_TYPES:
+        raise ValueError(f"Unsupported file type '{mime_type}'. Upload an image, PDF, or .docx.")
+
+    if mime_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        doc_text = extract_docx_text(file_bytes)
+        if not doc_text.strip():
+            raise ValueError(f"Couldn't find any text in {filename or 'that document'}.")
+        prompt = f"{GUEST_FIELDS_INSTRUCTION}\n\nDOCUMENT TEXT:\n{doc_text[:8000]}"
+        return with_retry(lambda: call_gemini_once(prompt, PARSE_MODEL), "Gemini file parsing")
+
+    file_part = {"inline_data": {"mime_type": mime_type, "data": base64.b64encode(file_bytes).decode("ascii")}}
+    return with_retry(
+        lambda: call_gemini_once(GUEST_FIELDS_INSTRUCTION, PARSE_MODEL, file_part=file_part),
+        "Gemini file parsing",
+    )
 
 
 def score_guest(rubric, guest, model, source, source_file):

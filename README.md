@@ -93,10 +93,17 @@ Opens at `http://127.0.0.1:5000`. Each client gets a private URL,
 `/c/<slug>/`, with:
 
 - **Ranked Guests** — the dashboard, filterable by tier and by inbound-vs-sourced
-- **Score a Pitch** — a form for one guest (replaces hand-writing JSON)
+- **Score a Pitch** — fill the fields manually, *or* upload a screenshot, PDF,
+  or `.docx` of the pitch and it extracts the fields for you to review/edit
+  before scoring (never auto-scores straight from the upload). Images/PDFs go
+  through Gemini's vision directly; `.docx` gets text-extracted first
+  (`python-docx`) then read the same way as a manual pitch.
 - **Find Guests** — a form for the search criteria (replaces hand-writing JSON)
 - **Rubric** — read-only view of what they're being scored on (builds trust,
   and it's clear this isn't self-serve editable)
+- **Export CSV / Import CSV** — backup/restore a client's scored guest list.
+  Needed before/after every Render redeploy (see below) since results aren't
+  tracked in git.
 
 Create a new client at `/admin/clients/new` — this is *your* screen, not a
 client's. It copies the default `rubric.json` into `clients/<slug>/`. **You

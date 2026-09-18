@@ -270,6 +270,25 @@ details summary {
   font-size: 0.88rem;
 }
 
+.notice {
+  background: #eaf6ee;
+  color: #1a7a3f;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+}
+
+.upload-card {
+  margin-bottom: 18px;
+  background: #fafbfc;
+}
+
+.form-card input[type="file"] {
+  font-size: 0.88rem;
+  padding: 6px 0;
+  border: none;
+}
+
 .rubric-table { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
 
 .rubric-row {

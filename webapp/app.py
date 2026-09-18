@@ -27,6 +27,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CLIENTS_DIR = os.path.join(BASE_DIR, "clients")
 
 app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 10MB upload cap
 
 
 def client_paths(slug):
@@ -103,6 +104,28 @@ def import_csv(slug):
         return render_template("import_csv.html", slug=slug, error=f"Couldn't read that CSV: {e}")
 
     return redirect(url_for("dashboard", slug=slug))
+
+
+@app.route("/c/<slug>/score/parse", methods=["POST"])
+def score_parse(slug):
+    client_paths(slug)  # 404s if the client doesn't exist
+    file = request.files.get("upload_file")
+    if not file or file.filename == "":
+        return render_template("score_form.html", slug=slug, error="Choose a file first.", form={})
+
+    mime_type = file.mimetype
+    try:
+        extracted = engine.extract_guest_from_file(file.read(), mime_type, filename=file.filename)
+    except (ValueError, SystemExit) as e:
+        return render_template("score_form.html", slug=slug, error=str(e), form={})
+
+    return render_template(
+        "score_form.html",
+        slug=slug,
+        error=None,
+        form=extracted,
+        notice=f"Extracted from {file.filename} - review before scoring.",
+    )
 
 
 @app.route("/c/<slug>/score/new", methods=["GET", "POST"])
