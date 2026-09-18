@@ -2,11 +2,12 @@
 {% block title %}Find Guests{% endblock %}
 {% block content %}
   <div class="page-header"><h1>Find Guests</h1></div>
+  {% if welcome %}<div class="notice">Setup complete - your show profile and scoring criteria are saved. Try your first search below, or edit them any time from the nav.</div>{% endif %}
   <form class="form-card" method="post">
     {% if error %}<div class="alert">{{ error }}</div>{% endif %}
     <label>
       Topic
-      <input type="text" name="topic" value="{{ form.topic or '' }}" placeholder="e.g. AI agents in enterprise software" required>
+      <input type="text" name="topic" value="{{ form.topic or '' }}" placeholder="Leave blank to use your show profile's industry/target guest">
     </label>
     <label>
       Desired role

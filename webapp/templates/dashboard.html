@@ -2,7 +2,10 @@
 {% block title %}{{ slug }} - Ranked Guests{% endblock %}
 {% block content %}
   <div class="page-header">
-    <h1>Ranked Guests</h1>
+    <div>
+      <h1>Ranked Guests</h1>
+      {% if profile.show_name %}<p class="show-subtitle">{{ profile.show_name }}{% if profile.industry %} &middot; {{ profile.industry }}{% endif %}</p>{% endif %}
+    </div>
     <div class="header-actions">
       <a class="btn" href="{{ url_for('export_csv', slug=slug) }}">Export CSV</a>
       <a class="btn" href="{{ url_for('import_csv', slug=slug) }}">Import CSV</a>

@@ -1,25 +1,74 @@
 {% extends "base.html" %}
-{% block title %}Rubric{% endblock %}
+{% block title %}Scoring Criteria{% endblock %}
 {% block content %}
-  <div class="page-header"><h1>{{ rubric.name }}</h1></div>
-  <p class="hint">This is set by your Guest Scorer operator, not editable here. Ask them to adjust it if it doesn't match how you'd actually rank guests.</p>
-
-  <div class="rubric-table">
-    {% for c in rubric.criteria %}
-      <div class="rubric-row">
-        <div class="rubric-label">{{ c.label }}</div>
-        <div class="rubric-weight">max {{ c.weight }} pts</div>
-        <div class="rubric-guidance">{{ c.guidance }}</div>
-      </div>
-    {% endfor %}
+  <div class="page-header">
+    <h1>Scoring Criteria</h1>
+    {% if onboarding %}<span class="step-badge">Step 2 of 2</span>{% endif %}
   </div>
 
-  <h2 class="tiers-heading">Tiers (out of {{ rubric.max_score }})</h2>
-  <div class="tier-legend">
-    {% for t in rubric.tiers %}
-      <div class="tier-legend-item" data-tier="{{ t.label }}">
-        <strong>{{ t.label }}</strong> &mdash; score &ge; {{ t.min }}
+  {% if onboarding %}
+    <p class="hint intro-hint">This is what every guest gets scored against - start from these defaults and adjust the weights or wording to match your show. You can always come back and change this later.</p>
+  {% elif saved %}
+    <div class="notice">Saved.</div>
+  {% endif %}
+
+  <form class="form-card criteria-form" method="post" id="criteria-form">
+    {% if error %}<div class="alert">{{ error }}</div>{% endif %}
+    <label>
+      Rubric name
+      <input type="text" name="name" value="{{ rubric.name }}">
+    </label>
+
+    <div id="criteria-rows">
+      {% for c in rubric.criteria %}
+        <div class="criterion-row">
+          <input type="hidden" name="key" value="{{ c.key }}">
+          <div class="criterion-row-top">
+            <input type="text" name="label" value="{{ c.label }}" placeholder="Criterion name" class="criterion-label" required>
+            <input type="number" name="weight" value="{{ c.weight }}" min="1" max="50" class="criterion-weight">
+            <span class="pts-label">pts</span>
+            <button type="button" class="btn btn-remove" onclick="this.closest('.criterion-row').remove(); updateTotal();">Remove</button>
+          </div>
+          <textarea name="guidance" rows="2" placeholder="What should the model look for on this criterion?">{{ c.guidance }}</textarea>
+        </div>
+      {% endfor %}
+    </div>
+
+    <button type="button" class="btn" id="add-criterion">+ Add Criterion</button>
+
+    <div class="total-bar">Total: <strong id="total-points">{{ rubric.criteria | sum(attribute='weight') }}</strong> points (this becomes your max score)</div>
+
+    <button class="btn btn-primary" type="submit">{{ 'Continue to Find Guests' if onboarding else 'Save Criteria' }}</button>
+  </form>
+
+  <template id="row-template">
+    <div class="criterion-row">
+      <input type="hidden" name="key" value="">
+      <div class="criterion-row-top">
+        <input type="text" name="label" value="" placeholder="Criterion name" class="criterion-label" required>
+        <input type="number" name="weight" value="5" min="1" max="50" class="criterion-weight">
+        <span class="pts-label">pts</span>
+        <button type="button" class="btn btn-remove" onclick="this.closest('.criterion-row').remove(); updateTotal();">Remove</button>
       </div>
-    {% endfor %}
-  </div>
+      <textarea name="guidance" rows="2" placeholder="What should the model look for on this criterion?"></textarea>
+    </div>
+  </template>
+
+  <script>
+    function updateTotal() {
+      const weights = document.querySelectorAll('.criterion-weight');
+      let total = 0;
+      weights.forEach(w => { total += parseInt(w.value || '0', 10); });
+      document.getElementById('total-points').textContent = total;
+    }
+    document.getElementById('criteria-rows').addEventListener('input', (e) => {
+      if (e.target.classList.contains('criterion-weight')) updateTotal();
+    });
+    document.getElementById('add-criterion').addEventListener('click', () => {
+      const tpl = document.getElementById('row-template');
+      const clone = tpl.content.cloneNode(true);
+      document.getElementById('criteria-rows').appendChild(clone);
+      updateTotal();
+    });
+  </script>
 {% endblock %}

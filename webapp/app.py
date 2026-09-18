@@ -2,10 +2,11 @@
 """
 Guest Scorer - client-facing web UI.
 
-Each client gets a private URL: /c/<client_slug>/
-Client data (rubric + scored guests) lives in clients/<slug>/ - you (the
-operator) create/customize a client's rubric.json by hand; clients never edit
-their own rubric through the UI.
+Each client gets a private URL: /c/<client_slug>/. A new client goes through
+a short guided setup first time in: /admin/clients/new (your screen) creates
+the client, then they land in onboarding - profile (who they are / what the
+show covers) -> scoring criteria (fully editable, not hardcoded) -> Find
+Guests. After that, both profile and criteria stay editable any time.
 
 Run:
     python webapp/app.py
@@ -29,6 +30,11 @@ CLIENTS_DIR = os.path.join(BASE_DIR, "clients")
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 10MB upload cap
 
+EMPTY_PROFILE = {
+    "host_name": "", "show_name": "", "industry": "",
+    "show_description": "", "target_guest_profile": "", "onboarded": True,
+}
+
 
 def client_paths(slug):
     client_dir = os.path.join(CLIENTS_DIR, slug)
@@ -38,7 +44,21 @@ def client_paths(slug):
         "dir": client_dir,
         "rubric": os.path.join(client_dir, "rubric.json"),
         "results": os.path.join(client_dir, "guests_scored.json"),
+        "profile": os.path.join(client_dir, "profile.json"),
     }
+
+
+def load_profile(paths):
+    # Clients created before profile.json existed are grandfathered in as
+    # already-onboarded, so they aren't suddenly bounced into the wizard.
+    if not os.path.exists(paths["profile"]):
+        return dict(EMPTY_PROFILE)
+    return engine.load_json(paths["profile"])
+
+
+def save_profile(paths, profile):
+    with open(paths["profile"], "w", encoding="utf-8") as f:
+        json.dump(profile, f, indent=2)
 
 
 @app.route("/")
@@ -52,6 +72,10 @@ def home():
 @app.route("/c/<slug>/")
 def dashboard(slug):
     paths = client_paths(slug)
+    profile = load_profile(paths)
+    if not profile.get("onboarded", True):
+        return redirect(url_for("onboarding_profile", slug=slug))
+
     tier = request.args.get("tier") or None
     source = request.args.get("source") or None
     results = engine.ranked_results(paths["results"], tier=tier, source=source)
@@ -61,16 +85,71 @@ def dashboard(slug):
         slug=slug,
         results=results,
         rubric=rubric,
+        profile=profile,
         active_tier=tier,
         active_source=source,
     )
 
 
-@app.route("/c/<slug>/rubric")
-def rubric_view(slug):
+@app.route("/c/<slug>/onboarding/profile", methods=["GET", "POST"])
+def onboarding_profile(slug):
     paths = client_paths(slug)
-    rubric = engine.load_json(paths["rubric"])
-    return render_template("rubric.html", slug=slug, rubric=rubric)
+    profile = load_profile(paths)
+
+    if request.method == "GET":
+        return render_template("onboarding_profile.html", slug=slug, form=profile, error=None)
+
+    profile.update({
+        "host_name": request.form.get("host_name", "").strip(),
+        "show_name": request.form.get("show_name", "").strip(),
+        "industry": request.form.get("industry", "").strip(),
+        "show_description": request.form.get("show_description", "").strip(),
+        "target_guest_profile": request.form.get("target_guest_profile", "").strip(),
+    })
+    if not profile["show_name"] or not profile["industry"]:
+        return render_template(
+            "onboarding_profile.html", slug=slug, form=profile,
+            error="Show name and industry/field are required - this is what makes scoring actually relevant to you.",
+        )
+
+    save_profile(paths, profile)
+    return redirect(url_for("rubric_edit", slug=slug))
+
+
+@app.route("/c/<slug>/rubric", methods=["GET", "POST"])
+def rubric_edit(slug):
+    paths = client_paths(slug)
+    profile = load_profile(paths)
+    onboarding = not profile.get("onboarded", True)
+
+    if request.method == "GET":
+        rubric = engine.load_json(paths["rubric"])
+        return render_template(
+            "rubric.html", slug=slug, rubric=rubric, onboarding=onboarding,
+            error=None, saved=request.args.get("saved"),
+        )
+
+    labels = request.form.getlist("label")
+    weights = request.form.getlist("weight")
+    guidances = request.form.getlist("guidance")
+    keys = request.form.getlist("key")
+    name = request.form.get("name", "")
+
+    try:
+        new_rubric = engine.normalize_rubric(name, labels, weights, guidances, keys)
+    except ValueError as e:
+        rubric = engine.load_json(paths["rubric"])
+        return render_template("rubric.html", slug=slug, rubric=rubric, onboarding=onboarding, error=str(e), saved=None)
+
+    with open(paths["rubric"], "w", encoding="utf-8") as f:
+        json.dump(new_rubric, f, indent=2)
+
+    if onboarding:
+        profile["onboarded"] = True
+        save_profile(paths, profile)
+        return redirect(url_for("find_new", slug=slug, welcome=1))
+
+    return redirect(url_for("rubric_edit", slug=slug, saved=1))
 
 
 @app.route("/c/<slug>/export/csv")
@@ -131,6 +210,8 @@ def score_parse(slug):
 @app.route("/c/<slug>/score/new", methods=["GET", "POST"])
 def score_new(slug):
     paths = client_paths(slug)
+    if not load_profile(paths).get("onboarded", True):
+        return redirect(url_for("onboarding_profile", slug=slug))
     if request.method == "GET":
         return render_template("score_form.html", slug=slug, error=None, form={})
 
@@ -144,8 +225,9 @@ def score_new(slug):
         return render_template("score_form.html", slug=slug, error="Name is required.", form=guest)
 
     rubric = engine.load_json(paths["rubric"])
+    profile = load_profile(paths)
     try:
-        record = engine.score_guest(rubric, guest, engine.DEFAULT_MODEL, "inbound", "web-form")
+        record = engine.score_guest(rubric, guest, engine.DEFAULT_MODEL, "inbound", "web-form", profile=profile)
     except SystemExit as e:
         return render_template("score_form.html", slug=slug, error=str(e), form=guest)
 
@@ -156,8 +238,10 @@ def score_new(slug):
 @app.route("/c/<slug>/find/new", methods=["GET", "POST"])
 def find_new(slug):
     paths = client_paths(slug)
+    if not load_profile(paths).get("onboarded", True):
+        return redirect(url_for("onboarding_profile", slug=slug))
     if request.method == "GET":
-        return render_template("find_form.html", slug=slug, error=None, form={})
+        return render_template("find_form.html", slug=slug, error=None, form={}, welcome=request.args.get("welcome"))
 
     criteria = {
         "topic": request.form.get("topic", "").strip(),
@@ -167,25 +251,26 @@ def find_new(slug):
         "exclude": request.form.get("exclude", "").strip(),
         "max_candidates": int(request.form.get("max_candidates") or 5),
     }
-    if not criteria["topic"]:
-        return render_template("find_form.html", slug=slug, error="Topic is required.", form=criteria)
-
     rubric = engine.load_json(paths["rubric"])
-    query = engine.build_find_query(criteria)
+    profile = load_profile(paths)
+    if not criteria["topic"] and not profile.get("target_guest_profile") and not profile.get("industry"):
+        return render_template("find_form.html", slug=slug, error="Topic is required (or set your show profile first).", form=criteria, welcome=None)
+
+    query = engine.build_find_query(criteria, profile=profile)
     try:
         search_results = engine.search_web(query, max_results=max(criteria["max_candidates"] * 2, 10))
         if not search_results:
-            return render_template("find_form.html", slug=slug, error="No search results found - try broadening the criteria.", form=criteria)
+            return render_template("find_form.html", slug=slug, error="No search results found - try broadening the criteria.", form=criteria, welcome=None)
 
-        candidates = engine.extract_candidates(criteria, search_results, engine.DEFAULT_MODEL)[: criteria["max_candidates"]]
+        candidates = engine.extract_candidates(criteria, search_results, engine.DEFAULT_MODEL, profile=profile)[: criteria["max_candidates"]]
         if not candidates:
-            return render_template("find_form.html", slug=slug, error="No named candidates could be extracted - try broadening the criteria.", form=criteria)
+            return render_template("find_form.html", slug=slug, error="No named candidates could be extracted - try broadening the criteria.", form=criteria, welcome=None)
 
         for candidate in candidates:
-            record = engine.score_guest(rubric, candidate, engine.DEFAULT_MODEL, "sourced", "web-search")
+            record = engine.score_guest(rubric, candidate, engine.DEFAULT_MODEL, "sourced", "web-search", profile=profile)
             engine.save_result(record, paths["results"])
     except SystemExit as e:
-        return render_template("find_form.html", slug=slug, error=str(e), form=criteria)
+        return render_template("find_form.html", slug=slug, error=str(e), form=criteria, welcome=None)
 
     return redirect(url_for("dashboard", slug=slug, source="sourced"))
 
@@ -211,7 +296,13 @@ def new_client(slug=None):
     with open(os.path.join(client_dir, "rubric.json"), "w", encoding="utf-8") as f:
         json.dump(default_rubric, f, indent=2)
 
-    return redirect(url_for("dashboard", slug=slug))
+    profile = dict(EMPTY_PROFILE)
+    profile["show_name"] = name
+    profile["onboarded"] = False
+    with open(os.path.join(client_dir, "profile.json"), "w", encoding="utf-8") as f:
+        json.dump(profile, f, indent=2)
+
+    return redirect(url_for("onboarding_profile", slug=slug))
 
 
 if __name__ == "__main__":

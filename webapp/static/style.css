@@ -289,45 +289,63 @@ details summary {
   border: none;
 }
 
-.rubric-table { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+.step-badge {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--primary);
+  background: #e7edfb;
+  padding: 4px 10px;
+  border-radius: 999px;
+  align-self: center;
+}
 
-.rubric-row {
-  background: var(--surface);
+.intro-hint { margin-bottom: 18px; font-size: 0.88rem; }
+
+.show-subtitle { margin: 2px 0 0; color: var(--text-muted); font-size: 0.88rem; }
+
+.criteria-form { max-width: 640px; }
+
+.criterion-row {
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 12px 16px;
-  display: grid;
-  grid-template-columns: 200px 90px 1fr;
-  gap: 12px;
-  align-items: baseline;
-}
-
-.rubric-label { font-weight: 700; }
-.rubric-weight { color: var(--primary); font-weight: 600; font-size: 0.85rem; }
-.rubric-guidance { color: var(--text-muted); font-size: 0.9rem; }
-
-.tiers-heading { margin-top: 0; }
-
-.tier-legend { display: flex; flex-direction: column; gap: 8px; }
-
-.tier-legend-item {
-  padding: 10px 14px;
   border-radius: 8px;
-  border-left: 4px solid var(--tier4);
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  font-size: 0.9rem;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.tier-legend-item[data-tier^="Tier 1"] { border-left-color: var(--tier1); }
-.tier-legend-item[data-tier^="Tier 2"] { border-left-color: var(--tier2); }
-.tier-legend-item[data-tier^="Tier 3"] { border-left-color: var(--tier3); }
-.tier-legend-item[data-tier^="Tier 4"] { border-left-color: var(--tier4); }
+.criterion-row-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.criterion-label { flex: 1; }
+
+.criterion-weight { width: 64px; text-align: center; }
+
+.pts-label { font-size: 0.82rem; color: var(--text-muted); font-weight: 500; }
+
+.btn-remove {
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  color: #b3261e;
+  border-color: #f3d4d1;
+  margin-left: auto;
+}
+
+.total-bar {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  padding: 8px 0;
+}
+
+.total-bar strong { color: var(--text); font-size: 1.05rem; }
+
+template { display: none; }
 
 @media (max-width: 640px) {
-  .rubric-row { grid-template-columns: 1fr; gap: 4px; }
   .guest-card { flex-direction: column; }
   .guest-score { flex-direction: row; gap: 6px; padding: 8px; }
+  .criterion-row-top { flex-wrap: wrap; }
 }

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Set Up Your Show{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <h1>Set Up Your Show</h1>
+    <span class="step-badge">Step 1 of 2</span>
+  </div>
+  <p class="hint intro-hint">This is what makes scoring actually relevant to your show, instead of generic. It feeds directly into how every guest gets evaluated.</p>
+
+  <form class="form-card" method="post">
+    {% if error %}<div class="alert">{{ error }}</div>{% endif %}
+    <label>
+      Your name
+      <input type="text" name="host_name" value="{{ form.host_name or '' }}" placeholder="Who's the host?">
+    </label>
+    <label>
+      Show name
+      <input type="text" name="show_name" value="{{ form.show_name or '' }}" required>
+    </label>
+    <label>
+      Industry / field
+      <input type="text" name="industry" value="{{ form.industry or '' }}" placeholder="e.g. Real Estate, AI/Tech, Fitness, Finance" required>
+    </label>
+    <label>
+      What's the show about?
+      <textarea name="show_description" rows="3" placeholder="e.g. Interviews with independent real estate investors about deal-finding and financing.">{{ form.show_description or '' }}</textarea>
+    </label>
+    <label>
+      What does an ideal guest look like?
+      <textarea name="target_guest_profile" rows="3" placeholder="e.g. Active investors or agents with a specific, provable strategy - not gurus or coaches with no track record.">{{ form.target_guest_profile or '' }}</textarea>
+    </label>
+    <button class="btn btn-primary" type="submit">Continue to Scoring Criteria</button>
+  </form>
+{% endblock %}

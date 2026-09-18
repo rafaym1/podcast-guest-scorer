@@ -62,20 +62,88 @@ def load_json(path):
         return json.load(f)
 
 
-def build_prompt(rubric, guest):
+def rubric_max_score(rubric):
+    return sum(c["weight"] for c in rubric["criteria"])
+
+
+DEFAULT_TIERS = [
+    {"label": "Tier 1 - Book Immediately", "min_pct": 0.825},
+    {"label": "Tier 2 - Strong Candidate", "min_pct": 0.625},
+    {"label": "Tier 3 - Maybe / Backlog", "min_pct": 0.375},
+    {"label": "Tier 4 - Pass", "min_pct": 0.0},
+]
+
+
+def slugify_key(label, used_keys):
+    base = "".join(c if c.isalnum() else "_" for c in label.lower()).strip("_") or "criterion"
+    key = base
+    i = 2
+    while key in used_keys:
+        key = f"{base}_{i}"
+        i += 1
+    return key
+
+
+def normalize_rubric(name, labels, weights, guidances, keys):
+    """Builds a valid rubric dict from parallel form-submitted lists (used by the criteria editor)."""
+    criteria = []
+    used_keys = set()
+    for label, weight, guidance, key in zip(labels, weights, guidances, keys):
+        label = (label or "").strip()
+        if not label:
+            continue
+        try:
+            weight = max(1, int(weight))
+        except (TypeError, ValueError):
+            weight = 5
+        key = (key or "").strip() or slugify_key(label, used_keys)
+        if key in used_keys:
+            key = slugify_key(label, used_keys)
+        used_keys.add(key)
+        criteria.append({"key": key, "label": label, "weight": weight, "guidance": (guidance or "").strip()})
+
+    if not criteria:
+        raise ValueError("At least one criterion is required.")
+
+    return {"name": name.strip() or "Guest Scoring Rubric", "criteria": criteria, "tiers": DEFAULT_TIERS}
+
+
+def rubric_tier_lines(rubric, max_score):
+    lines = []
+    for t in rubric["tiers"]:
+        abs_min = round(t["min_pct"] * max_score)
+        lines.append(f'- {t["label"]}: score >= {abs_min}')
+    return "\n".join(lines)
+
+
+def profile_section(profile):
+    if not profile or not any(profile.get(k) for k in ("show_name", "industry", "show_description", "target_guest_profile")):
+        return ""
+    lines = ["SHOW PROFILE (use this to judge topical/niche fit - this show is NOT generic):"]
+    if profile.get("show_name"):
+        lines.append(f'- Show: {profile["show_name"]}')
+    if profile.get("industry"):
+        lines.append(f'- Industry/field: {profile["industry"]}')
+    if profile.get("show_description"):
+        lines.append(f'- What the show covers: {profile["show_description"]}')
+    if profile.get("target_guest_profile"):
+        lines.append(f'- Ideal guest looks like: {profile["target_guest_profile"]}')
+    return "\n".join(lines) + "\n\n"
+
+
+def build_prompt(rubric, guest, profile=None):
+    max_score = rubric_max_score(rubric)
     criteria_lines = "\n".join(
         f'- "{c["key"]}" ({c["label"]}, max {c["weight"]} pts): {c["guidance"]}'
         for c in rubric["criteria"]
     )
-    tier_lines = "\n".join(
-        f'- {t["label"]}: score >= {t["min"]}' for t in rubric["tiers"]
-    )
+    tier_lines = rubric_tier_lines(rubric, max_score)
     guest_lines = "\n".join(f"{k}: {v}" for k, v in guest.items())
 
     return f"""You are scoring a podcast guest pitch for a host, using this rubric.
 Score EACH criterion independently, do not just guess a total.
 
-CRITERIA (max_score total = {rubric["max_score"]}):
+{profile_section(profile)}CRITERIA (max_score total = {max_score}):
 {criteria_lines}
 
 TIERS:
@@ -91,7 +159,7 @@ Respond with ONLY valid JSON, no markdown fences, matching exactly this shape:
     ...
   ],
   "total_score": <int>,
-  "max_score": {rubric["max_score"]},
+  "max_score": {max_score},
   "tier": "<tier label from the TIERS list>",
   "summary": "<one sentence overall verdict for the host>"
 }}"""
@@ -207,8 +275,12 @@ def search_web(query, max_results=10):
     return data.get("results", [])
 
 
-def build_find_query(criteria):
-    parts = [criteria.get("topic", "")]
+def build_find_query(criteria, profile=None):
+    profile = profile or {}
+    topic = criteria.get("topic") or profile.get("target_guest_profile") or profile.get("industry", "")
+    parts = [topic]
+    if profile.get("industry") and profile.get("industry", "") not in topic:
+        parts.append(profile["industry"])
     if criteria.get("role"):
         parts.append(criteria["role"])
     if criteria.get("recency"):
@@ -218,7 +290,7 @@ def build_find_query(criteria):
     return " ".join(p for p in parts if p).strip()
 
 
-def extract_candidates(criteria, search_results, model):
+def extract_candidates(criteria, search_results, model, profile=None):
     results_text = "\n\n".join(
         f"[{i}] {r.get('title', '')}\nURL: {r.get('url', '')}\n{r.get('content', '')[:600]}"
         for i, r in enumerate(search_results, 1)
@@ -227,7 +299,7 @@ def extract_candidates(criteria, search_results, model):
 
     prompt = f"""You are helping a podcast host find real, named guest candidates from raw web search results.
 
-SEARCH CRITERIA:
+{profile_section(profile)}SEARCH CRITERIA:
 - Topic: {criteria.get("topic", "")}
 - Desired role: {criteria.get("role", "any")}
 - Recency requirement: {criteria.get("recency", "none")}
@@ -302,8 +374,8 @@ def extract_guest_from_file(file_bytes, mime_type, filename=""):
     )
 
 
-def score_guest(rubric, guest, model, source, source_file):
-    prompt = build_prompt(rubric, guest)
+def score_guest(rubric, guest, model, source, source_file, profile=None):
+    prompt = build_prompt(rubric, guest, profile=profile)
     result = call_llm(prompt, model=model)
     return {
         "guest_name": guest.get("name", "Unknown"),

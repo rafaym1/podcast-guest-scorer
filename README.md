@@ -9,14 +9,14 @@ for you to test/tune) and a client-facing web UI (`webapp/`, for clients).
 ## What's here
 
 - `rubric.json` — the *default* scoring criteria/weights, copied into a new
-  client's folder when you create them. Generic starting point, not tuned
-  to any real show yet.
+  client's folder when you create them. Generic starting point - clients
+  customize it themselves during onboarding (see "Web UI" below).
 - `score.py` — the scoring/search engine (also runnable as a CLI). Everything
   in `webapp/` imports and reuses this - one engine, two interfaces.
 - `webapp/` — the client-facing web app. See "Web UI" below.
-- `clients/<slug>/` — one folder per client: their `rubric.json` (customized
-  by you) and `guests_scored.json` (their results). Fully isolated from each
-  other.
+- `clients/<slug>/` — one folder per client: `profile.json` (their show/niche),
+  `rubric.json` (their scoring criteria, self-edited), `guests_scored.json`
+  (their results). Fully isolated from each other.
 - `examples/` — sample guest pitches (strong / weak / medium) and a sample
   search criteria file, to sanity-check the rubric before trusting it.
 
@@ -89,27 +89,39 @@ python score.py rank --source inbound   # only people who pitched you
 ```bash
 python webapp/app.py
 ```
-Opens at `http://127.0.0.1:5000`. Each client gets a private URL,
-`/c/<slug>/`, with:
+Opens at `http://127.0.0.1:5000`. Create a client at `/admin/clients/new`
+(your screen - one click, just a name) and they land in a short guided setup:
 
+1. **Show profile** — host name, show name, industry/field, what the show
+   covers, what an ideal guest looks like. This isn't cosmetic - it gets
+   injected directly into every prompt sent to the model (`profile_section()`
+   in `score.py`), so a real estate show and an AI show get judged on
+   genuinely different terms, not the same generic rubric.
+2. **Scoring criteria** — fully editable, not hardcoded: add/remove criteria,
+   change weights, rewrite the guidance text per criterion. The rubric's max
+   score is always `sum(weights)`, recomputed live as they edit (see the point
+   counter on the page) - no way for it to drift out of sync.
+3. Lands on **Find Guests** ready to go.
+
+After setup, everything stays editable any time from the nav - "Scoring
+Criteria" is the same page as onboarding step 2, just without the wizard
+framing. Each client's data lives in `clients/<slug>/`:
+`profile.json` (their niche), `rubric.json` (their criteria),
+`guests_scored.json` (their results) - fully isolated from other clients.
+
+Pages:
 - **Ranked Guests** — the dashboard, filterable by tier and by inbound-vs-sourced
 - **Score a Pitch** — fill the fields manually, *or* upload a screenshot, PDF,
-  or `.docx` of the pitch and it extracts the fields for you to review/edit
-  before scoring (never auto-scores straight from the upload). Images/PDFs go
+  or `.docx` of the pitch and it extracts the fields for review/edit before
+  scoring (never auto-scores straight from the upload). Images/PDFs go
   through Gemini's vision directly; `.docx` gets text-extracted first
   (`python-docx`) then read the same way as a manual pitch.
-- **Find Guests** — a form for the search criteria (replaces hand-writing JSON)
-- **Rubric** — read-only view of what they're being scored on (builds trust,
-  and it's clear this isn't self-serve editable)
+- **Find Guests** — search criteria form; leave "Topic" blank and it falls
+  back to the show profile's industry/target guest description
+- **Scoring Criteria** — the editor described above
 - **Export CSV / Import CSV** — backup/restore a client's scored guest list.
   Needed before/after every Render redeploy (see below) since results aren't
   tracked in git.
-
-Create a new client at `/admin/clients/new` — this is *your* screen, not a
-client's. It copies the default `rubric.json` into `clients/<slug>/`. **You
-then hand-edit that file to actually customize their rubric** — there's no
-self-serve rubric editor yet, by design (see the prompt this was built from:
-"customized from me").
 
 This is a real Flask app, single dev server, no login/auth yet — client
 separation is by (unguessable) URL slug only. Fine for early pilot clients
