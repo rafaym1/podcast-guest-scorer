@@ -345,6 +345,44 @@ Respond with ONLY valid JSON, no markdown fences, matching exactly this shape:
     return result.get("candidates", [])
 
 
+def diagnose_find_failure(criteria, profile, query, search_results, model=DEFAULT_MODEL):
+    """Explains a specific failed search using what was actually entered and actually found -
+    not a canned message. Never raises: a diagnosis failure shouldn't break the error page."""
+    profile = profile or {}
+    if search_results:
+        found_text = "\n".join(f'- "{r.get("title", "")}"' for r in search_results[:10])
+    else:
+        found_text = "(the web search itself returned zero results for this query)"
+
+    prompt = f"""A podcast host used a guest-finding tool and got no usable result. Look at exactly what they
+entered and explain specifically why - not generic advice, reference their actual field values and what was
+actually found - then suggest one concrete edit to a specific field. Address them directly as "you". Keep it
+to 2-3 sentences total.
+
+THEIR SEARCH FIELDS:
+- Topic: {criteria.get("topic") or "(left blank - fell back to show profile)"}
+- Desired role: {criteria.get("role") or "(left blank)"}
+- Recency: {criteria.get("recency") or "(left blank)"}
+- Location: {criteria.get("location") or "(left blank)"}
+- Exclude: {criteria.get("exclude") or "(left blank)"}
+
+SHOW PROFILE (used as fallback/context):
+- Industry: {profile.get("industry") or "(not set)"}
+- Target guest description: {profile.get("target_guest_profile") or "(not set)"}
+
+ACTUAL SEARCH QUERY SENT TO THE WEB: {query}
+
+WHAT WAS FOUND:
+{found_text}
+
+Respond with ONLY valid JSON: {{"explanation": "<your 2-3 sentences>"}}"""
+    try:
+        result = call_llm(prompt, model=model, attempts=2)
+        return result.get("explanation", "").strip()
+    except SystemExit:
+        return ""
+
+
 GUEST_FIELDS_INSTRUCTION = """Extract information about a potential podcast guest from this document (could be an
 email pitch, a LinkedIn profile screenshot, a bio page, a one-pager, etc). Use ONLY facts present in the document -
 never invent anything. Leave a field as an empty string if it isn't present.

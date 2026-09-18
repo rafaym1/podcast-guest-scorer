@@ -290,15 +290,18 @@ def find_new(slug):
     try:
         search_results = engine.search_web(query, max_results=max(criteria["max_candidates"] * 2, 10))
         if not search_results:
-            return render_template("find_form.html", slug=slug, error="No search results found - try broadening the criteria.", form=criteria, welcome=None)
+            explanation = engine.diagnose_find_failure(criteria, profile, query, search_results, engine.DEFAULT_MODEL)
+            return render_template(
+                "find_form.html", slug=slug, form=criteria, welcome=None,
+                error=explanation or "No search results found for this combination of fields - try broadening one of them.",
+            )
 
         candidates = engine.extract_candidates(criteria, search_results, engine.DEFAULT_MODEL, profile=profile)[: criteria["max_candidates"]]
         if not candidates:
+            explanation = engine.diagnose_find_failure(criteria, profile, query, search_results, engine.DEFAULT_MODEL)
             return render_template(
-                "find_form.html", slug=slug, welcome=None, form=criteria,
-                error="Found pages, but none named a specific person to extract (often means the results were "
-                      "market reports/investor lists rather than profiles - try a more specific or person-focused topic).",
-                searched=search_results,
+                "find_form.html", slug=slug, welcome=None, form=criteria, searched=search_results,
+                error=explanation or "Found pages, but none named a specific person to extract - try a more person-focused topic.",
             )
 
         for candidate in candidates:

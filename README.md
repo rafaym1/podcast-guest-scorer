@@ -123,7 +123,13 @@ Pages:
   through Gemini's vision directly; `.docx` gets text-extracted first
   (`python-docx`) then read the same way as a manual pitch.
 - **Find Guests** — search criteria form; leave "Topic" blank and it falls
-  back to the show profile's industry/target guest description
+  back to the show profile's industry/target guest description. The query
+  sent to the web is phrased as "profile or interview with a &lt;role&gt;
+  working on &lt;topic&gt;..." rather than raw keywords - this is what
+  actually finds individuals instead of market reports. If a search comes up
+  empty, the error isn't a canned message - the model looks at your specific
+  fields and what was actually found, then explains why and suggests a
+  concrete edit (`diagnose_find_failure()` in `score.py`).
 - **Scoring Criteria** — the editor described above
 - **Export CSV / Import CSV** — backup/restore a client's scored guest list.
   Needed before/after every Render redeploy (see below) since results aren't
