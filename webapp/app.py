@@ -30,6 +30,21 @@ CLIENTS_DIR = os.path.join(BASE_DIR, "clients")
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 10MB upload cap
 
+
+@app.template_filter("first_link")
+def first_link_filter(links_str):
+    """First URL out of a comma-separated links string, normalized to be clickable."""
+    if not links_str:
+        return None
+    first = links_str.split(",")[0].strip()
+    if not first:
+        return None
+    if first.startswith("http://") or first.startswith("https://"):
+        return first
+    if "@" in first and "/" not in first:
+        return f"mailto:{first}"
+    return f"https://{first}"
+
 EMPTY_PROFILE = {
     "host_name": "", "show_name": "", "industry": "",
     "show_description": "", "target_guest_profile": "", "onboarded": True,
@@ -78,7 +93,8 @@ def dashboard(slug):
 
     tier = request.args.get("tier") or None
     source = request.args.get("source") or None
-    results = engine.ranked_results(paths["results"], tier=tier, source=source)
+    status = request.args.get("status") or None
+    results = engine.ranked_results(paths["results"], tier=tier, source=source, status=status)
     rubric = engine.load_json(paths["rubric"])
     return render_template(
         "dashboard.html",
@@ -88,7 +104,21 @@ def dashboard(slug):
         profile=profile,
         active_tier=tier,
         active_source=source,
+        active_status=status,
     )
+
+
+@app.route("/c/<slug>/guest/<guest_id>/status", methods=["POST"])
+def guest_status(slug, guest_id):
+    paths = client_paths(slug)
+    new_status = request.form.get("status")
+    if new_status not in ("kept", "discarded", "new"):
+        abort(400, description="Invalid status")
+    try:
+        engine.set_guest_status(paths["results"], guest_id, new_status)
+    except ValueError:
+        abort(404, description="Unknown guest")
+    return redirect(request.referrer or url_for("dashboard", slug=slug))
 
 
 @app.route("/c/<slug>/onboarding/profile", methods=["GET", "POST"])
@@ -280,11 +310,11 @@ def new_client(slug=None):
     if request.method == "GET":
         return render_template("new_client.html", error=None)
 
-    name = request.form.get("name", "").strip()
-    if not name:
-        return render_template("new_client.html", error="Client name is required.")
+    host_name = request.form.get("name", "").strip()
+    if not host_name:
+        return render_template("new_client.html", error="Your name is required.")
 
-    slug = "".join(c if c.isalnum() else "-" for c in name.lower()).strip("-") or uuid.uuid4().hex[:8]
+    slug = "".join(c if c.isalnum() else "-" for c in host_name.lower()).strip("-") or uuid.uuid4().hex[:8]
     client_dir = os.path.join(CLIENTS_DIR, slug)
     if os.path.isdir(client_dir):
         slug = f"{slug}-{uuid.uuid4().hex[:4]}"
@@ -292,12 +322,11 @@ def new_client(slug=None):
 
     os.makedirs(client_dir)
     default_rubric = engine.load_json(os.path.join(BASE_DIR, "rubric.json"))
-    default_rubric["name"] = f"{name} Scoring Rubric"
     with open(os.path.join(client_dir, "rubric.json"), "w", encoding="utf-8") as f:
         json.dump(default_rubric, f, indent=2)
 
     profile = dict(EMPTY_PROFILE)
-    profile["show_name"] = name
+    profile["host_name"] = host_name
     profile["onboarded"] = False
     with open(os.path.join(client_dir, "profile.json"), "w", encoding="utf-8") as f:
         json.dump(profile, f, indent=2)

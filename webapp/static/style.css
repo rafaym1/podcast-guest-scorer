@@ -171,6 +171,14 @@ h2 { font-size: 1.1rem; }
 
 .guest-top h3 { margin: 0; font-size: 1.05rem; }
 
+.guest-top h3 a {
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px dashed var(--text-muted);
+}
+
+.guest-top h3 a:hover { color: var(--primary); border-bottom-color: var(--primary); }
+
 .badge {
   font-size: 0.7rem;
   font-weight: 700;
@@ -182,6 +190,29 @@ h2 { font-size: 1.1rem; }
 
 .badge-inbound { background: #e7edfb; color: var(--primary); }
 .badge-sourced { background: #fbeee0; color: #b25f18; }
+.badge-kept { background: #e2f5e9; color: var(--tier1); }
+.badge-discarded { background: #f1f1f3; color: var(--text-muted); }
+
+.guest-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.guest-actions form { margin: 0; }
+
+.btn-keep {
+  color: var(--tier1);
+  border-color: #bfe8d2;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+}
+
+.btn-discard {
+  color: var(--text-muted);
+  padding: 6px 14px;
+  font-size: 0.82rem;
+}
 
 .tier-label {
   margin: 2px 0 8px;

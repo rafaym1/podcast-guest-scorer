@@ -5,14 +5,11 @@
     <h1>Set Up Your Show</h1>
     <span class="step-badge">Step 1 of 2</span>
   </div>
-  <p class="hint intro-hint">This is what makes scoring actually relevant to your show, instead of generic. It feeds directly into how every guest gets evaluated.</p>
+  <p class="hint intro-hint">Hey {{ form.host_name }} - this is what makes scoring actually relevant to your show, instead of generic. It feeds directly into how every guest gets evaluated.</p>
 
   <form class="form-card" method="post">
     {% if error %}<div class="alert">{{ error }}</div>{% endif %}
-    <label>
-      Your name
-      <input type="text" name="host_name" value="{{ form.host_name or '' }}" placeholder="Who's the host?">
-    </label>
+    <input type="hidden" name="host_name" value="{{ form.host_name or '' }}">
     <label>
       Show name
       <input type="text" name="show_name" value="{{ form.show_name or '' }}" required>

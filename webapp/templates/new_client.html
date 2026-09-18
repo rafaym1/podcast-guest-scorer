@@ -5,10 +5,10 @@
   <form class="form-card" method="post">
     {% if error %}<div class="alert">{{ error }}</div>{% endif %}
     <label>
-      Client / show name
-      <input type="text" name="name" placeholder="e.g. The Founder Hour" required>
+      Your name
+      <input type="text" name="name" placeholder="e.g. Alex Rivera" required>
     </label>
-    <p class="hint">Creates a private dashboard with the default rubric, ready for you to customize.</p>
+    <p class="hint">This is the host - remembered for them, so they won't be asked again during setup.</p>
     <button class="btn btn-primary" type="submit">Create Client</button>
   </form>
 {% endblock %}

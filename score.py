@@ -26,12 +26,13 @@ import json
 import os
 import sys
 import time
+import uuid
 import argparse
 import urllib.request
 import urllib.error
 from datetime import datetime, timezone
 
-CSV_FIELDS = ["guest_name", "scored_at", "source", "source_file", "total_score", "max_score", "tier", "summary", "criteria_json"]
+CSV_FIELDS = ["id", "guest_name", "links", "scored_at", "source", "source_file", "status", "total_score", "max_score", "tier", "summary", "criteria_json"]
 
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
@@ -388,10 +389,13 @@ def score_guest(rubric, guest, model, source, source_file, profile=None):
     prompt = build_prompt(rubric, guest, profile=profile)
     result = call_llm(prompt, model=model)
     return {
+        "id": uuid.uuid4().hex[:12],
         "guest_name": guest.get("name", "Unknown"),
+        "links": guest.get("links", ""),
         "scored_at": datetime.now(timezone.utc).isoformat(),
         "source": source,
         "source_file": source_file,
+        "status": "new",
         **result,
     }
 
@@ -416,6 +420,8 @@ def csv_rows_to_results(rows):
     results = []
     for row in rows:
         rec = {k: row.get(k, "") for k in CSV_FIELDS if k != "criteria_json"}
+        rec["id"] = rec["id"] or uuid.uuid4().hex[:12]
+        rec["status"] = rec["status"] or "new"
         rec["total_score"] = int(rec["total_score"] or 0)
         rec["max_score"] = int(rec["max_score"] or 0)
         rec["criteria"] = json.loads(row.get("criteria_json") or "[]")
@@ -438,16 +444,57 @@ def read_results_csv(results_path, csv_file):
     return results
 
 
-def ranked_results(results_path, tier=None, source=None):
+def backfill_result_fields(results_path):
+    """Records saved before id/status/links existed need these before Keep/Discard can target them."""
+    if not os.path.exists(results_path):
+        return
+    results = load_json(results_path)
+    changed = False
+    for r in results:
+        if "id" not in r:
+            r["id"] = uuid.uuid4().hex[:12]
+            changed = True
+        if "status" not in r:
+            r["status"] = "new"
+            changed = True
+        if "links" not in r:
+            r["links"] = ""
+            changed = True
+    if changed:
+        with open(results_path, "w", encoding="utf-8") as f:
+            json.dump(results, f, indent=2)
+
+
+def ranked_results(results_path, tier=None, source=None, status=None):
     if not os.path.exists(results_path):
         return []
+    backfill_result_fields(results_path)
     results = load_json(results_path)
     if tier:
         results = [r for r in results if r["tier"] == tier]
     if source:
         results = [r for r in results if r.get("source") == source]
+    if status:
+        results = [r for r in results if r.get("status", "new") == status]
+    else:
+        # Default view hides discarded guests without deleting them - reversible.
+        results = [r for r in results if r.get("status", "new") != "discarded"]
     results.sort(key=lambda r: r["total_score"], reverse=True)
     return results
+
+
+def set_guest_status(results_path, guest_id, status):
+    results = load_json(results_path) if os.path.exists(results_path) else []
+    found = False
+    for r in results:
+        if r.get("id") == guest_id:
+            r["status"] = status
+            found = True
+            break
+    if not found:
+        raise ValueError(f"No guest with id '{guest_id}'")
+    with open(results_path, "w", encoding="utf-8") as f:
+        json.dump(results, f, indent=2)
 
 
 def print_record(record):

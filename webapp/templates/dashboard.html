@@ -15,18 +15,22 @@
   </div>
 
   <div class="filters">
-    <a class="chip {{ 'chip-active' if not active_source else '' }}" href="{{ url_for('dashboard', slug=slug, tier=active_tier) }}">All</a>
-    <a class="chip {{ 'chip-active' if active_source == 'inbound' else '' }}" href="{{ url_for('dashboard', slug=slug, tier=active_tier, source='inbound') }}">Inbound Pitches</a>
-    <a class="chip {{ 'chip-active' if active_source == 'sourced' else '' }}" href="{{ url_for('dashboard', slug=slug, tier=active_tier, source='sourced') }}">Sourced by Us</a>
+    <a class="chip {{ 'chip-active' if not active_source else '' }}" href="{{ url_for('dashboard', slug=slug, tier=active_tier, status=active_status) }}">All</a>
+    <a class="chip {{ 'chip-active' if active_source == 'inbound' else '' }}" href="{{ url_for('dashboard', slug=slug, tier=active_tier, source='inbound', status=active_status) }}">Inbound Pitches</a>
+    <a class="chip {{ 'chip-active' if active_source == 'sourced' else '' }}" href="{{ url_for('dashboard', slug=slug, tier=active_tier, source='sourced', status=active_status) }}">Sourced by Us</a>
     <span class="filter-divider"></span>
     {% for t in rubric.tiers %}
-      <a class="chip {{ 'chip-active' if active_tier == t.label else '' }}" href="{{ url_for('dashboard', slug=slug, source=active_source, tier=t.label) }}">{{ t.label }}</a>
+      <a class="chip {{ 'chip-active' if active_tier == t.label else '' }}" href="{{ url_for('dashboard', slug=slug, source=active_source, tier=t.label, status=active_status) }}">{{ t.label }}</a>
     {% endfor %}
+    <span class="filter-divider"></span>
+    <a class="chip {{ 'chip-active' if active_status == 'kept' else '' }}" href="{{ url_for('dashboard', slug=slug, tier=active_tier, source=active_source, status='kept') }}">Kept</a>
+    <a class="chip {{ 'chip-active' if active_status == 'discarded' else '' }}" href="{{ url_for('dashboard', slug=slug, tier=active_tier, source=active_source, status='discarded') }}">Discarded</a>
   </div>
 
   {% if results %}
     <div class="guest-list">
       {% for r in results %}
+        {% set link = r.links | first_link %}
         <div class="guest-card">
           <div class="guest-score" data-tier="{{ r.tier }}">
             <span class="score-num">{{ r.total_score }}</span>
@@ -34,8 +38,14 @@
           </div>
           <div class="guest-body">
             <div class="guest-top">
-              <h3>{{ r.guest_name }}</h3>
+              {% if link %}
+                <h3><a href="{{ link }}" target="_blank" rel="noopener">{{ r.guest_name }}</a></h3>
+              {% else %}
+                <h3>{{ r.guest_name }}</h3>
+              {% endif %}
               <span class="badge badge-{{ 'sourced' if r.source == 'sourced' else 'inbound' }}">{{ r.source }}</span>
+              {% if r.status == 'kept' %}<span class="badge badge-kept">kept</span>{% endif %}
+              {% if r.status == 'discarded' %}<span class="badge badge-discarded">discarded</span>{% endif %}
             </div>
             <p class="tier-label">{{ r.tier }}</p>
             <p class="summary">{{ r.summary }}</p>
@@ -47,11 +57,31 @@
                 {% endfor %}
               </ul>
             </details>
+            <div class="guest-actions">
+              {% if r.status != 'kept' %}
+                <form method="post" action="{{ url_for('guest_status', slug=slug, guest_id=r.id) }}">
+                  <input type="hidden" name="status" value="kept">
+                  <button class="btn btn-keep" type="submit">Keep</button>
+                </form>
+              {% endif %}
+              {% if r.status != 'discarded' %}
+                <form method="post" action="{{ url_for('guest_status', slug=slug, guest_id=r.id) }}">
+                  <input type="hidden" name="status" value="discarded">
+                  <button class="btn btn-discard" type="submit">Discard</button>
+                </form>
+              {% endif %}
+              {% if r.status != 'new' %}
+                <form method="post" action="{{ url_for('guest_status', slug=slug, guest_id=r.id) }}">
+                  <input type="hidden" name="status" value="new">
+                  <button class="btn" type="submit">Undo</button>
+                </form>
+              {% endif %}
+            </div>
           </div>
         </div>
       {% endfor %}
     </div>
   {% else %}
-    <p class="empty-state">No guests scored yet. <a href="{{ url_for('score_new', slug=slug) }}">Score a pitch</a> or <a href="{{ url_for('find_new', slug=slug) }}">find candidates</a> to get started.</p>
+    <p class="empty-state">No guests here. <a href="{{ url_for('score_new', slug=slug) }}">Score a pitch</a> or <a href="{{ url_for('find_new', slug=slug) }}">find candidates</a> to get started.</p>
   {% endif %}
 {% endblock %}

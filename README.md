@@ -90,13 +90,14 @@ python score.py rank --source inbound   # only people who pitched you
 python webapp/app.py
 ```
 Opens at `http://127.0.0.1:5000`. Create a client at `/admin/clients/new`
-(your screen - one click, just a name) and they land in a short guided setup:
+(your screen - one click, just **their name**, remembered as the host so it's
+never asked again) and they land in a short guided setup:
 
-1. **Show profile** — host name, show name, industry/field, what the show
-   covers, what an ideal guest looks like. This isn't cosmetic - it gets
-   injected directly into every prompt sent to the model (`profile_section()`
-   in `score.py`), so a real estate show and an AI show get judged on
-   genuinely different terms, not the same generic rubric.
+1. **Show profile** — show name, industry/field, what the show covers, what
+   an ideal guest looks like. This isn't cosmetic - it gets injected directly
+   into every prompt sent to the model (`profile_section()` in `score.py`),
+   so a real estate show and an AI show get judged on genuinely different
+   terms, not the same generic rubric.
 2. **Scoring criteria** — fully editable, not hardcoded: add/remove criteria,
    change weights, rewrite the guidance text per criterion. The rubric's max
    score is always `sum(weights)`, recomputed live as they edit (see the point
@@ -110,7 +111,12 @@ framing. Each client's data lives in `clients/<slug>/`:
 `guests_scored.json` (their results) - fully isolated from other clients.
 
 Pages:
-- **Ranked Guests** — the dashboard, filterable by tier and by inbound-vs-sourced
+- **Ranked Guests** — the dashboard, filterable by tier, inbound-vs-sourced,
+  and kept-vs-discarded. Each card's name links out to wherever it came from
+  (their submitted link, or the first link found during a search) when one's
+  available. **Keep**/**Discard** buttons per guest - discard hides it from
+  the default view without deleting it (see the Discarded filter), reversible
+  any time via Undo.
 - **Score a Pitch** — fill the fields manually, *or* upload a screenshot, PDF,
   or `.docx` of the pitch and it extracts the fields for review/edit before
   scoring (never auto-scores straight from the upload). Images/PDFs go
