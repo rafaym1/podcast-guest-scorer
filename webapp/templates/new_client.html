@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}New Client{% endblock %}
+{% block content %}
+  <div class="page-header"><h1>New Client</h1></div>
+  <form class="form-card" method="post">
+    {% if error %}<div class="alert">{{ error }}</div>{% endif %}
+    <label>
+      Client / show name
+      <input type="text" name="name" placeholder="e.g. The Founder Hour" required>
+    </label>
+    <p class="hint">Creates a private dashboard with the default rubric, ready for you to customize.</p>
+    <button class="btn btn-primary" type="submit">Create Client</button>
+  </form>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Rubric{% endblock %}
+{% block content %}
+  <div class="page-header"><h1>{{ rubric.name }}</h1></div>
+  <p class="hint">This is set by your Guest Scorer operator, not editable here. Ask them to adjust it if it doesn't match how you'd actually rank guests.</p>
+
+  <div class="rubric-table">
+    {% for c in rubric.criteria %}
+      <div class="rubric-row">
+        <div class="rubric-label">{{ c.label }}</div>
+        <div class="rubric-weight">max {{ c.weight }} pts</div>
+        <div class="rubric-guidance">{{ c.guidance }}</div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <h2 class="tiers-heading">Tiers (out of {{ rubric.max_score }})</h2>
+  <div class="tier-legend">
+    {% for t in rubric.tiers %}
+      <div class="tier-legend-item" data-tier="{{ t.label }}">
+        <strong>{{ t.label }}</strong> &mdash; score &ge; {{ t.min }}
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Guest Scorer - Clients{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <h1>Clients</h1>
+    <a class="btn btn-primary" href="{{ url_for('new_client') }}">+ New Client</a>
+  </div>
+
+  {% if clients %}
+    <ul class="client-list">
+      {% for c in clients %}
+        <li><a href="{{ url_for('dashboard', slug=c) }}">{{ c }}</a></li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty-state">No clients yet. Create one to get started.</p>
+  {% endif %}
+{% endblock %}

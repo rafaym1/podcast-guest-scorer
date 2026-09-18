@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ slug }} - Ranked Guests{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <h1>Ranked Guests</h1>
+    <div class="header-actions">
+      <a class="btn" href="{{ url_for('export_csv', slug=slug) }}">Export CSV</a>
+      <a class="btn" href="{{ url_for('import_csv', slug=slug) }}">Import CSV</a>
+      <a class="btn" href="{{ url_for('find_new', slug=slug) }}">Find Guests</a>
+      <a class="btn btn-primary" href="{{ url_for('score_new', slug=slug) }}">Score a Pitch</a>
+    </div>
+  </div>
+
+  <div class="filters">
+    <a class="chip {{ 'chip-active' if not active_source else '' }}" href="{{ url_for('dashboard', slug=slug, tier=active_tier) }}">All</a>
+    <a class="chip {{ 'chip-active' if active_source == 'inbound' else '' }}" href="{{ url_for('dashboard', slug=slug, tier=active_tier, source='inbound') }}">Inbound Pitches</a>
+    <a class="chip {{ 'chip-active' if active_source == 'sourced' else '' }}" href="{{ url_for('dashboard', slug=slug, tier=active_tier, source='sourced') }}">Sourced by Us</a>
+    <span class="filter-divider"></span>
+    {% for t in rubric.tiers %}
+      <a class="chip {{ 'chip-active' if active_tier == t.label else '' }}" href="{{ url_for('dashboard', slug=slug, source=active_source, tier=t.label) }}">{{ t.label }}</a>
+    {% endfor %}
+  </div>
+
+  {% if results %}
+    <div class="guest-list">
+      {% for r in results %}
+        <div class="guest-card">
+          <div class="guest-score" data-tier="{{ r.tier }}">
+            <span class="score-num">{{ r.total_score }}</span>
+            <span class="score-max">/{{ r.max_score }}</span>
+          </div>
+          <div class="guest-body">
+            <div class="guest-top">
+              <h3>{{ r.guest_name }}</h3>
+              <span class="badge badge-{{ 'sourced' if r.source == 'sourced' else 'inbound' }}">{{ r.source }}</span>
+            </div>
+            <p class="tier-label">{{ r.tier }}</p>
+            <p class="summary">{{ r.summary }}</p>
+            <details>
+              <summary>Score breakdown</summary>
+              <ul class="criteria-list">
+                {% for c in r.criteria %}
+                  <li><strong>{{ c.key }}:</strong> {{ c.score }} &mdash; {{ c.rationale }}</li>
+                {% endfor %}
+              </ul>
+            </details>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="empty-state">No guests scored yet. <a href="{{ url_for('score_new', slug=slug) }}">Score a pitch</a> or <a href="{{ url_for('find_new', slug=slug) }}">find candidates</a> to get started.</p>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,6 @@
+.env
+guests_scored.json
+__pycache__/
+*.pyc
+guest-scorer-deploy.zip
+.claude/

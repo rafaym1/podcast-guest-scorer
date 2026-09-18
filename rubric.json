@@ -1,0 +1,43 @@
+{
+  "name": "Default Guest Scoring Rubric",
+  "description": "Edit the criteria/weights below to match your show's niche. Weights must sum to max_score.",
+  "max_score": 40,
+  "tiers": [
+    { "label": "Tier 1 - Book Immediately", "min": 33 },
+    { "label": "Tier 2 - Strong Candidate", "min": 25 },
+    { "label": "Tier 3 - Maybe / Backlog", "min": 15 },
+    { "label": "Tier 4 - Pass", "min": 0 }
+  ],
+  "criteria": [
+    {
+      "key": "authority",
+      "label": "Authority & Credibility",
+      "weight": 10,
+      "guidance": "Citations, press coverage, published work, recognized credentials, notable prior media appearances."
+    },
+    {
+      "key": "reach",
+      "label": "Audience Reach",
+      "weight": 8,
+      "guidance": "Follower counts, newsletter/email list size, notable platforms or communities they can bring listeners from."
+    },
+    {
+      "key": "niche_fit",
+      "label": "Topical Fit for This Show",
+      "weight": 10,
+      "guidance": "How directly relevant their expertise/opinions are to THIS show's specific niche and audience (e.g. hands-on AI experience, strong opinionated take, operator not just observer)."
+    },
+    {
+      "key": "momentum",
+      "label": "Recency & Momentum",
+      "weight": 6,
+      "guidance": "Recent launch, recent funding, recent founder status, trending topic tie-in — makes the episode timely and shareable."
+    },
+    {
+      "key": "pitch_quality",
+      "label": "Pitch Quality Signal",
+      "weight": 6,
+      "guidance": "Specific, well-researched pitch with concrete proposed talking points vs. generic copy-paste outreach."
+    }
+  ]
+}

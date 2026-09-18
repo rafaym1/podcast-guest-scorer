@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Find Guests{% endblock %}
+{% block content %}
+  <div class="page-header"><h1>Find Guests</h1></div>
+  <form class="form-card" method="post">
+    {% if error %}<div class="alert">{{ error }}</div>{% endif %}
+    <label>
+      Topic
+      <input type="text" name="topic" value="{{ form.topic or '' }}" placeholder="e.g. AI agents in enterprise software" required>
+    </label>
+    <label>
+      Desired role
+      <input type="text" name="role" value="{{ form.role or '' }}" placeholder="e.g. founder or technical lead who has shipped a product">
+    </label>
+    <label>
+      Recency
+      <input type="text" name="recency" value="{{ form.recency or '' }}" placeholder="e.g. raised funding or launched in the last 6 months">
+    </label>
+    <label>
+      Location
+      <input type="text" name="location" value="{{ form.location or '' }}" placeholder="e.g. US and Europe">
+    </label>
+    <label>
+      Exclude
+      <input type="text" name="exclude" value="{{ form.exclude or '' }}" placeholder="e.g. pure marketers, no product experience">
+    </label>
+    <label>
+      Max candidates
+      <input type="number" name="max_candidates" value="{{ form.max_candidates or 5 }}" min="1" max="15">
+    </label>
+    <button class="btn btn-primary" type="submit">Search &amp; Score</button>
+    <p class="hint">Searches the web, then scores every candidate found against your rubric. Can take a minute or two.</p>
+  </form>
+{% endblock %}

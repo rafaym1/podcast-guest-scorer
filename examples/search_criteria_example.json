@@ -1,0 +1,8 @@
+{
+  "topic": "AI agents in enterprise software, hands-on builders not just commentators",
+  "role": "founder or technical lead who has shipped an AI product",
+  "recency": "raised funding, launched, or had a notable public moment in the last 6 months",
+  "location": "any, prioritize US and Europe",
+  "exclude": "pure marketers, growth hackers, or generic AI influencers with no product experience",
+  "max_candidates": 5
+}

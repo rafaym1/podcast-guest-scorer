@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Guest Scorer{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="{{ url_for('home') }}">Guest Scorer</a>
+      {% if slug %}
+        <nav class="nav">
+          <a href="{{ url_for('dashboard', slug=slug) }}">Ranked Guests</a>
+          <a href="{{ url_for('score_new', slug=slug) }}">Score a Pitch</a>
+          <a href="{{ url_for('find_new', slug=slug) }}">Find Guests</a>
+          <a href="{{ url_for('rubric_view', slug=slug) }}">Rubric</a>
+        </nav>
+      {% endif %}
+    </div>
+  </header>
+  <main class="content">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Score a Pitch{% endblock %}
+{% block content %}
+  <div class="page-header"><h1>Score a Pitch</h1></div>
+  <form class="form-card" method="post">
+    {% if error %}<div class="alert">{{ error }}</div>{% endif %}
+    <label>
+      Guest name
+      <input type="text" name="name" value="{{ form.name or '' }}" required>
+    </label>
+    <label>
+      Bio
+      <textarea name="bio" rows="3" placeholder="Who are they, what have they done?">{{ form.bio or '' }}</textarea>
+    </label>
+    <label>
+      Pitch text
+      <textarea name="pitch_text" rows="3" placeholder="What did they actually pitch you?">{{ form.pitch_text or '' }}</textarea>
+    </label>
+    <label>
+      Links
+      <input type="text" name="links" value="{{ form.links or '' }}" placeholder="LinkedIn, website, past appearances...">
+    </label>
+    <button class="btn btn-primary" type="submit">Score This Guest</button>
+    <p class="hint">Takes 5-20 seconds while the model scores against your rubric.</p>
+  </form>
+{% endblock %}
