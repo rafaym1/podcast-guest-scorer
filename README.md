@@ -102,7 +102,10 @@ never asked again) and they land in a short guided setup:
    change weights, rewrite the guidance text per criterion. The rubric's max
    score is always `sum(weights)`, recomputed live as they edit (see the point
    counter on the page) - no way for it to drift out of sync.
-3. Lands on **Find Guests** ready to go.
+3. Lands on a choice screen: **"I already have a topic"** (go straight to Find
+   Guests) or **"Help me find a topic first"** (go to Find Topics, then hand
+   off into Find Guests once one's picked). This is the same hub the "Find
+   Guests" nav link always points to, not just a one-time onboarding step.
 
 After setup, everything stays editable any time from the nav - "Scoring
 Criteria" is the same page as onboarding step 2, just without the wizard

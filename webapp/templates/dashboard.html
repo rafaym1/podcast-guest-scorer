@@ -9,7 +9,7 @@
     <div class="header-actions">
       <a class="btn" href="{{ url_for('export_csv', slug=slug) }}">Export CSV</a>
       <a class="btn" href="{{ url_for('import_csv', slug=slug) }}">Import CSV</a>
-      <a class="btn" href="{{ url_for('find_new', slug=slug) }}">Find Guests</a>
+      <a class="btn" href="{{ url_for('find_start', slug=slug) }}">Find Guests</a>
       <a class="btn btn-primary" href="{{ url_for('score_new', slug=slug) }}">Score a Pitch</a>
     </div>
   </div>
@@ -82,6 +82,6 @@
       {% endfor %}
     </div>
   {% else %}
-    <p class="empty-state">No guests here. <a href="{{ url_for('score_new', slug=slug) }}">Score a pitch</a> or <a href="{{ url_for('find_new', slug=slug) }}">find candidates</a> to get started.</p>
+    <p class="empty-state">No guests here. <a href="{{ url_for('score_new', slug=slug) }}">Score a pitch</a> or <a href="{{ url_for('find_start', slug=slug) }}">find candidates</a> to get started.</p>
   {% endif %}
 {% endblock %}

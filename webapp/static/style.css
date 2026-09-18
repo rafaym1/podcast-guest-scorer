@@ -314,6 +314,35 @@ details summary {
 .topic-card h3 { margin: 0 0 6px; font-size: 1.05rem; }
 .topic-card p { margin: 0 0 12px; color: var(--text-muted); font-size: 0.92rem; }
 
+.choice-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  max-width: 720px;
+}
+
+.choice-card {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color 0.15s;
+}
+
+.choice-card:hover { border-color: var(--primary); }
+
+.choice-card h3 { margin: 0 0 8px; font-size: 1.1rem; }
+.choice-card p { margin: 0 0 16px; color: var(--text-muted); font-size: 0.9rem; }
+
+.choice-cta { color: var(--primary); font-weight: 700; font-size: 0.88rem; }
+
+@media (max-width: 640px) {
+  .choice-grid { grid-template-columns: 1fr; }
+}
+
 .searched-results { max-width: 560px; margin-top: 18px; }
 
 .searched-list {

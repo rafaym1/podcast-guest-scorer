@@ -177,9 +177,17 @@ def rubric_edit(slug):
     if onboarding:
         profile["onboarded"] = True
         save_profile(paths, profile)
-        return redirect(url_for("find_new", slug=slug, welcome=1))
+        return redirect(url_for("find_start", slug=slug, welcome=1))
 
     return redirect(url_for("rubric_edit", slug=slug, saved=1))
+
+
+@app.route("/c/<slug>/find/start")
+def find_start(slug):
+    paths = client_paths(slug)
+    if not load_profile(paths).get("onboarded", True):
+        return redirect(url_for("onboarding_profile", slug=slug))
+    return render_template("find_start.html", slug=slug, welcome=request.args.get("welcome"))
 
 
 @app.route("/c/<slug>/export/csv")
@@ -272,7 +280,7 @@ def find_new(slug):
         return redirect(url_for("onboarding_profile", slug=slug))
     if request.method == "GET":
         prefill = {"topic": request.args.get("topic", "")} if request.args.get("topic") else {}
-        return render_template("find_form.html", slug=slug, error=None, form=prefill, welcome=request.args.get("welcome"))
+        return render_template("find_form.html", slug=slug, error=None, form=prefill, welcome=None)
 
     criteria = {
         "topic": request.form.get("topic", "").strip(),

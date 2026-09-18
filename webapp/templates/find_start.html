@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Find Guests{% endblock %}
+{% block content %}
+  <div class="page-header"><h1>Find Guests</h1></div>
+  {% if welcome %}<div class="notice">Setup complete - your show profile and scoring criteria are saved. Where do you want to start?</div>{% endif %}
+
+  <div class="choice-grid">
+    <a class="choice-card" href="{{ url_for('find_new', slug=slug) }}">
+      <h3>I already have a topic</h3>
+      <p>Go straight to searching for a guest who fits it.</p>
+      <span class="choice-cta">Find Guests &rarr;</span>
+    </a>
+    <a class="choice-card" href="{{ url_for('topics_new', slug=slug) }}">
+      <h3>Help me find a topic first</h3>
+      <p>Pull real news and discussion for your niche, get 4-5 specific episode ideas, then find a guest for whichever one you pick.</p>
+      <span class="choice-cta">Find Topics &rarr;</span>
+    </a>
+  </div>
+{% endblock %}
