@@ -249,7 +249,7 @@ def find_new(slug):
         "recency": request.form.get("recency", "").strip(),
         "location": request.form.get("location", "").strip(),
         "exclude": request.form.get("exclude", "").strip(),
-        "max_candidates": int(request.form.get("max_candidates") or 5),
+        "max_candidates": engine.clamp_max_candidates(request.form.get("max_candidates")),
     }
     rubric = engine.load_json(paths["rubric"])
     profile = load_profile(paths)

@@ -84,6 +84,16 @@ def slugify_key(label, used_keys):
     return key
 
 
+MAX_CANDIDATES_CAP = 10
+
+
+def clamp_max_candidates(value, default=5):
+    try:
+        return min(MAX_CANDIDATES_CAP, max(1, int(value)))
+    except (TypeError, ValueError):
+        return default
+
+
 def normalize_rubric(name, labels, weights, guidances, keys):
     """Builds a valid rubric dict from parallel form-submitted lists (used by the criteria editor)."""
     criteria = []
@@ -460,7 +470,7 @@ def cmd_score(args):
 def cmd_find(args):
     rubric = load_json(RUBRIC_PATH)
     criteria = load_json(args.criteria_file)
-    max_candidates = criteria.get("max_candidates", 8)
+    max_candidates = clamp_max_candidates(criteria.get("max_candidates"), default=5)
 
     query = build_find_query(criteria)
     print(f"Searching for: {query}\n")
