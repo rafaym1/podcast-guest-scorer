@@ -275,7 +275,7 @@ def search_web(query, max_results=10):
             {
                 "api_key": api_key,
                 "query": query,
-                "search_depth": "basic",
+                "search_depth": "advanced",
                 "max_results": max_results,
             },
             {"Content-Type": "application/json"},
@@ -287,18 +287,25 @@ def search_web(query, max_results=10):
 
 
 def build_find_query(criteria, profile=None):
+    """Builds a natural-language, person-seeking query - not keyword soup.
+    Plain concatenation (e.g. "AI edtech founder funding US") reads like a
+    research question to a search engine and surfaces market reports/investor
+    listicles instead of individuals. Framing it as "profile of a <role>..."
+    biases results toward content about one identifiable person."""
     profile = profile or {}
     topic = criteria.get("topic") or profile.get("target_guest_profile") or profile.get("industry", "")
-    parts = [topic]
-    if profile.get("industry") and profile.get("industry", "") not in topic:
-        parts.append(profile["industry"])
-    if criteria.get("role"):
-        parts.append(criteria["role"])
+    role = criteria.get("role") or "person"
+
+    sentence = f"profile or interview with a {role}"
+    if topic:
+        sentence += f" working on {topic}"
+    if profile.get("industry") and profile.get("industry", "").lower() not in sentence.lower():
+        sentence += f" in {profile['industry']}"
     if criteria.get("recency"):
-        parts.append(criteria["recency"])
+        sentence += f", who {criteria['recency']}"
     if criteria.get("location"):
-        parts.append(criteria["location"])
-    return " ".join(p for p in parts if p).strip()
+        sentence += f", based in {criteria['location']}"
+    return sentence.strip()
 
 
 def extract_candidates(criteria, search_results, model, profile=None):
