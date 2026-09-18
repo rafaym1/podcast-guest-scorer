@@ -18,17 +18,36 @@ import sys
 import json
 import io
 import uuid
+from functools import wraps
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import score as engine  # noqa: E402
 
-from flask import Flask, render_template, request, redirect, url_for, abort, Response
+from flask import Flask, render_template, request, redirect, url_for, abort, Response, session
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CLIENTS_DIR = os.path.join(BASE_DIR, "clients")
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 10MB upload cap
+# Sessions need a stable secret to survive redeploys - a random fallback would log
+# the admin out every restart. Set FLASK_SECRET_KEY in .env / Render env vars.
+# (score.py already loaded .env into os.environ at import time above.)
+app.secret_key = os.environ.get("FLASK_SECRET_KEY")
+if not app.secret_key:
+    app.secret_key = os.urandom(32)
+    print("WARNING: FLASK_SECRET_KEY not set - using a random key, admin sessions won't survive a restart.")
+
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
+
+
+def require_admin(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if not session.get("is_admin"):
+            return redirect(url_for("admin_login", next=request.path))
+        return view(*args, **kwargs)
+    return wrapped
 
 
 @app.template_filter("first_link")
@@ -81,7 +100,32 @@ def home():
     return render_template("landing.html")
 
 
+@app.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    if not ADMIN_PASSWORD:
+        # Nothing configured to check against - fail closed, not open.
+        return render_template("admin_login.html", error="ADMIN_PASSWORD is not set on the server - ask the operator to configure it."), 503
+
+    next_url = request.args.get("next") or request.form.get("next") or url_for("admin_home")
+    if request.method == "GET":
+        return render_template("admin_login.html", error=None, next=next_url)
+
+    if request.form.get("password") == ADMIN_PASSWORD:
+        session["is_admin"] = True
+        session.permanent = True
+        return redirect(next_url)
+
+    return render_template("admin_login.html", error="Wrong password.", next=next_url)
+
+
+@app.route("/admin/logout")
+def admin_logout():
+    session.pop("is_admin", None)
+    return redirect(url_for("home"))
+
+
 @app.route("/admin")
+@require_admin
 def admin_home():
     clients = sorted(
         d for d in os.listdir(CLIENTS_DIR) if os.path.isdir(os.path.join(CLIENTS_DIR, d))
@@ -366,6 +410,7 @@ def topics_new(slug):
 
 
 @app.route("/admin/clients/new", methods=["GET", "POST"])
+@require_admin
 def new_client(slug=None):
     if request.method == "GET":
         return render_template("new_client.html", error=None)

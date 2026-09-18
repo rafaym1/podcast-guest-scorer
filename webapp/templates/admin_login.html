@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Admin Login{% endblock %}
+{% block content %}
+  <div class="page-header"><h1>Admin Login</h1></div>
+  <form class="form-card" method="post">
+    {% if error %}<div class="alert">{{ error }}</div>{% endif %}
+    <input type="hidden" name="next" value="{{ next or '' }}">
+    <label>
+      Password
+      <input type="password" name="password" autofocus required>
+    </label>
+    <button class="btn btn-primary" type="submit">Log In</button>
+  </form>
+{% endblock %}

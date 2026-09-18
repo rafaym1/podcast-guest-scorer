@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Guest Scorer{% endblock %}</title>
+  <title>{% block title %}Podcast Automation{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
   <header class="topbar">
     <div class="topbar-inner">
-      <a class="brand" href="{{ url_for('admin_home') }}">Guest Scorer</a>
+      <a class="brand" href="{{ url_for('admin_home') }}">Podcast Automation</a>
       {% if slug %}
         <nav class="nav">
           <a href="{{ url_for('dashboard', slug=slug) }}">Ranked Guests</a>

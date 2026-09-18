@@ -41,7 +41,14 @@ OPENROUTER_API_KEY=...   # openrouter.ai - fallback provider, only used for "org
 GOOGLE_API_KEY=...       # ai.google.dev - powers scoring/extraction by default
 SCORER_MODEL=...         # defaults to gemini-3.5-flash-lite (called directly, not via OpenRouter)
 TAVILY_API_KEY=...       # tavily.com, free tier - powers web search for `find`
+FLASK_SECRET_KEY=...     # any long random string - signs the admin session cookie
+ADMIN_PASSWORD=...       # gates /admin - this is YOUR password, not a client's
 ```
+
+`FLASK_SECRET_KEY` and `ADMIN_PASSWORD` also need to be set in Render's
+environment variables (not just locally), or `/admin` is unreachable on the
+live site (fails closed with a 503, not open) and every redeploy logs you out
+of any existing session.
 
 Model selection: any model name **without** a `/` (e.g. `gemini-3.5-flash-lite`)
 is called directly against Google's API using `GOOGLE_API_KEY`. Any model name
@@ -165,10 +172,13 @@ Pages:
   Needed before/after every Render redeploy (see below) since results aren't
   tracked in git.
 
-This is a real Flask app, single dev server, no login/auth yet — client
-separation is by (unguessable) URL slug only. Fine for early pilot clients
-you're handing links to directly; add real auth before this is public-facing
-or has more than a handful of clients.
+This is a real Flask app, single dev server. `/admin` (the client list and
+"+ New Client") is password-protected — a single operator password
+(`ADMIN_PASSWORD`), session-based, fails closed if unset. Individual client
+dashboards at `/c/<slug>/` are **not** password-gated - separation there is
+by unguessable URL slug only, same tradeoff as before. Fine for early pilot
+clients you're handing links to directly; add per-client auth before this is
+public-facing or has more than a handful of clients.
 
 ## Validate before building more
 

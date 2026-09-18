@@ -1,9 +1,12 @@
 {% extends "base.html" %}
-{% block title %}Guest Scorer - Clients{% endblock %}
+{% block title %}Podcast Automation - Clients{% endblock %}
 {% block content %}
   <div class="page-header">
     <h1>Clients</h1>
-    <a class="btn btn-primary" href="{{ url_for('new_client') }}">+ New Client</a>
+    <div class="header-actions">
+      <a class="btn" href="{{ url_for('admin_logout') }}">Log Out</a>
+      <a class="btn btn-primary" href="{{ url_for('new_client') }}">+ New Client</a>
+    </div>
   </div>
 
   {% if clients %}

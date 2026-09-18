@@ -644,6 +644,9 @@ template { display: none; }
   .hero-grid { grid-template-columns: 1fr; }
   .hero-headline { font-size: 2rem; max-width: 100%; }
   .feature-grid { grid-template-columns: 1fr; }
+  /* h1 shrinks here but h2/h3 didn't, collapsing the step below 1.25x - rescale together */
+  .landing-main h2, .side-card h2 { font-size: 1.45rem; }
+  .feature-card h3 { font-size: 1.15rem; }
 }
 
 @media (max-width: 560px) {
