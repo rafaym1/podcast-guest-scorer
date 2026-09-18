@@ -78,10 +78,15 @@ def save_profile(paths, profile):
 
 @app.route("/")
 def home():
+    return render_template("landing.html")
+
+
+@app.route("/admin")
+def admin_home():
     clients = sorted(
         d for d in os.listdir(CLIENTS_DIR) if os.path.isdir(os.path.join(CLIENTS_DIR, d))
     )
-    return render_template("home.html", clients=clients)
+    return render_template("admin.html", clients=clients)
 
 
 @app.route("/c/<slug>/")

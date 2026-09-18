@@ -9,7 +9,7 @@
 <body>
   <header class="topbar">
     <div class="topbar-inner">
-      <a class="brand" href="{{ url_for('home') }}">Guest Scorer</a>
+      <a class="brand" href="{{ url_for('admin_home') }}">Guest Scorer</a>
       {% if slug %}
         <nav class="nav">
           <a href="{{ url_for('dashboard', slug=slug) }}">Ranked Guests</a>

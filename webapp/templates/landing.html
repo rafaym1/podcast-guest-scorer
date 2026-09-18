@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guest Scorer - Podcast just got automated</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="landing-nav">
+    <div class="landing-nav-inner">
+      <a class="brand" href="{{ url_for('home') }}">Guest Scorer</a>
+      <nav class="nav">
+        <a href="{{ url_for('home') }}#features">Features</a>
+        <a href="{{ url_for('admin_home') }}">Clients</a>
+      </nav>
+      <a class="btn btn-primary" href="{{ url_for('new_client') }}">Start Here</a>
+    </div>
+  </header>
+
+  <main class="landing-main">
+    <div class="hero-grid">
+      <div class="hero-card">
+        <svg class="hero-doodle" viewBox="0 0 500 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="450" cy="40" r="3" fill="#17140E"/>
+          <circle cx="470" cy="70" r="3" fill="#17140E"/>
+          <circle cx="430" cy="90" r="3" fill="#17140E"/>
+          <path d="M400 260 Q 430 230 460 260 T 500 260" stroke="#17140E" stroke-width="2.5" fill="none"/>
+          <path d="M20 30 Q 50 10 80 30" stroke="#17140E" stroke-width="2.5" fill="none"/>
+        </svg>
+        <span class="hero-badge"><span class="live-dot"></span>3 NEW FEATURES</span>
+        <h1 class="hero-headline">Podcast just got automated.</h1>
+        <a class="hero-cta" href="{{ url_for('new_client') }}">Start Here &rarr;</a>
+      </div>
+
+      <div class="side-card">
+        <span class="side-badge">How it works</span>
+        <h3>Find a topic, find a guest, score every pitch - one place.</h3>
+        <p>Real news + discussion search for episode ideas, guest search grounded in your show's actual niche, and every pitch scored against criteria you control.</p>
+      </div>
+    </div>
+
+    <div class="ticker">
+      <div class="ticker-track">
+        <span>FIND TOPICS FROM REAL NEWS</span>
+        <span>&middot;</span>
+        <span>SCORE EVERY PITCH</span>
+        <span>&middot;</span>
+        <span>FIND GUESTS THAT FIT YOUR SHOW</span>
+        <span>&middot;</span>
+        <span>YOUR CRITERIA, NOT HARDCODED</span>
+        <span>&middot;</span>
+        <span>FIND TOPICS FROM REAL NEWS</span>
+        <span>&middot;</span>
+        <span>SCORE EVERY PITCH</span>
+        <span>&middot;</span>
+        <span>FIND GUESTS THAT FIT YOUR SHOW</span>
+        <span>&middot;</span>
+        <span>YOUR CRITERIA, NOT HARDCODED</span>
+      </div>
+    </div>
+
+    <div id="features" class="landing-section-head">
+      <h2>What it does</h2>
+    </div>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">01</div>
+        <h3>Score every pitch</h3>
+        <p>Manual entry or upload a screenshot/PDF/doc - scored against criteria you define, ranked into tiers automatically.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">02</div>
+        <h3>Find topics first</h3>
+        <p>Real news and discussion search for your niche turns into 4-5 specific episode angles, each with real sources.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">03</div>
+        <h3>Find the right guest</h3>
+        <p>Search grounded in your actual show profile - not generic keyword matching - to find people who really fit.</p>
+      </div>
+    </div>
+
+    <div class="landing-footer">
+      Already have a link? <a href="{{ url_for('admin_home') }}">See all clients</a>
+    </div>
+  </main>
+</body>
+</html>

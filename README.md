@@ -6,6 +6,18 @@ actively **search for and rank candidate guests** matching criteria set,
 instead of only waiting for pitches to arrive. Has both a CLI (`score.py`,
 for you to test/tune) and a client-facing web UI (`webapp/`, for clients).
 
+## Design
+
+`/` is a standalone marketing landing page (`webapp/templates/landing.html`),
+separate from the app itself - no client list, just a bold hero and a "Start
+Here" CTA into client creation. The actual client list lives at `/admin`
+(your screen, not shown publicly). Visual style is neo-brutalist: cream
+background with a dot texture, thick black borders, hard offset shadows, pill
+buttons/badges, Lexend Mega + Public Sans. All defined as CSS custom
+properties at the top of `webapp/static/style.css` - the whole palette/
+border/shadow system is driven from there, so it's consistent across every
+page (landing, dashboard, forms, editors) without per-page overrides.
+
 ## What's here
 
 - `rubric.json` — the *default* scoring criteria/weights, copied into a new
@@ -89,9 +101,9 @@ python score.py rank --source inbound   # only people who pitched you
 ```bash
 python webapp/app.py
 ```
-Opens at `http://127.0.0.1:5000`. Create a client at `/admin/clients/new`
-(your screen - one click, just **their name**, remembered as the host so it's
-never asked again) and they land in a short guided setup:
+`http://127.0.0.1:5000` is the public landing page. Create a client at
+`/admin/clients/new` (your screen - one click, just **their name**, remembered
+as the host so it's never asked again) and they land in a short guided setup:
 
 1. **Show profile** — show name, industry/field, what the show covers, what
    an ideal guest looks like. This isn't cosmetic - it gets injected directly
