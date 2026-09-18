@@ -314,6 +314,39 @@ details summary {
 .topic-card h3 { margin: 0 0 6px; font-size: 1.05rem; }
 .topic-card p { margin: 0 0 12px; color: var(--text-muted); font-size: 0.92rem; }
 
+.topic-sources {
+  margin: 0 0 14px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 0;
+}
+
+.topic-sources a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.topic-sources a:hover { text-decoration: underline; }
+
+.source-sep { margin: 0 6px; color: var(--border); }
+
+.sources-label { color: var(--text-muted); margin-right: 4px; }
+
+.ai-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: #f1eafc;
+  color: #7c4fd6;
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-right: 6px;
+}
+
 .choice-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

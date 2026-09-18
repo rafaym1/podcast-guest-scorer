@@ -404,10 +404,10 @@ def build_topic_search_queries(profile, seed):
 
 def generate_topic_ideas(profile, seed, avoid, recency, news_results, discussion_results, model=DEFAULT_MODEL):
     profile = profile or {}
-    news_text = "\n".join(f'- "{r.get("title", "")}"' for r in news_results[:10]) or "(nothing found)"
-    discussion_text = "\n".join(f'- "{r.get("title", "")}"' for r in discussion_results[:10]) or "(nothing found)"
-    seed_text = f"\nHOST'S SPECIFIC INTEREST RIGHT NOW: {seed}" if seed else ""
-    avoid_text = f"\nALREADY COVERED RECENTLY - DO NOT REPEAT THESE: {avoid}" if avoid else ""
+    # One combined, numbered list so the model can cite sources by index - far more
+    # reliable than asking it to reproduce a URL string from memory, which LLMs get wrong.
+    combined = list(news_results) + list(discussion_results)
+    numbered_text = "\n".join(f'[{i}] "{r.get("title", "")}"' for i, r in enumerate(combined, 1)) or "(nothing found)"
 
     prompt = f"""You are a podcast producer helping a host find their next episode topics.
 
@@ -416,15 +416,14 @@ SHOW PROFILE:
 - Industry/field: {profile.get("industry", "")}
 - What the show covers: {profile.get("show_description", "")}
 - Target guest: {profile.get("target_guest_profile", "")}
-{seed_text}{avoid_text}
+
+HOST'S SPECIFIC INTEREST RIGHT NOW: {seed}
+ALREADY COVERED RECENTLY - DO NOT REPEAT THESE: {avoid}
 
 RECENCY PREFERENCE: {recency}
 
-RECENT NEWS FOUND:
-{news_text}
-
-COMMUNITY DISCUSSION/DEBATE FOUND:
-{discussion_text}
+NUMBERED SOURCES FOUND (news + community discussion combined):
+{numbered_text}
 
 Using ONLY signal from the above (don't invent events that aren't reflected there), propose 4-5 specific, compelling
 episode topics. Each must be a specific angle or question, not a vague category ("AI trends" is bad; "Why enterprise
@@ -432,18 +431,33 @@ AI pilots keep failing at the procurement stage, not the model" is good). Prefer
 happening right now over generic evergreen ideas, unless the recency preference says otherwise. For each, also write
 a short phrase for finding a GUEST who could speak to that specific angle (a kind of person, not the topic itself).
 
+For each topic, list which numbered source(s) above it's actually grounded in, as "source_indices" (e.g. [2, 5]).
+Be honest: if a topic is more your own synthesis/inference from the show profile than something tied to one specific
+source, use an empty list [] - do not force a citation that isn't really there.
+
 Respond with ONLY valid JSON, no markdown fences:
 {{
   "topics": [
     {{
       "title": "<punchy episode topic, one line>",
       "angle": "<1-2 sentences: the specific angle and why it's timely right now>",
-      "guest_search_topic": "<short phrase describing who could speak to this>"
+      "guest_search_topic": "<short phrase describing who could speak to this>",
+      "source_indices": [<ints from the numbered list above, or an empty list if this is your own synthesis>]
     }}
   ]
 }}"""
     result = call_llm(prompt, model=model)
-    return result.get("topics", [])
+    topics = result.get("topics", [])
+
+    for t in topics:
+        sources = []
+        for i in t.get("source_indices") or []:
+            idx = i - 1
+            if isinstance(i, int) and 0 <= idx < len(combined):
+                r = combined[idx]
+                sources.append({"title": r.get("title", ""), "url": r.get("url", "")})
+        t["sources"] = sources
+    return topics
 
 
 GUEST_FIELDS_INSTRUCTION = """Extract information about a potential podcast guest from this document (could be an

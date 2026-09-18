@@ -7,12 +7,12 @@
   <form class="form-card" method="post">
     {% if error %}<div class="alert">{{ error }}</div>{% endif %}
     <label>
-      Anything specific on your mind? (optional)
-      <input type="text" name="seed" value="{{ form.seed or '' }}" placeholder="e.g. the new EU AI Act enforcement, or leave blank to use your show profile">
+      Anything specific on your mind?
+      <input type="text" name="seed" value="{{ form.seed or '' }}" placeholder="e.g. the new EU AI Act enforcement" required>
     </label>
     <label>
-      Topics you've covered recently (optional, avoids repeats)
-      <textarea name="avoid" rows="2" placeholder="e.g. we just did an episode on RAG pipelines and one on AI agents">{{ form.avoid or '' }}</textarea>
+      Topics you've covered recently
+      <textarea name="avoid" rows="2" placeholder="e.g. we just did an episode on RAG pipelines and one on AI agents" required>{{ form.avoid or '' }}</textarea>
     </label>
     <label>
       Recency
@@ -31,6 +31,17 @@
         <div class="topic-card">
           <h3>{{ t.title }}</h3>
           <p>{{ t.angle }}</p>
+          {% if t.sources %}
+            <div class="topic-sources">
+              <span class="sources-label">Sources:</span>
+              {% for s in t.sources %}<a href="{{ s.url }}" target="_blank" rel="noopener">{{ s.title }}</a>{% if not loop.last %}<span class="source-sep">&middot;</span>{% endif %}{% endfor %}
+            </div>
+          {% else %}
+            <div class="topic-sources">
+              <span class="ai-badge">AI idea</span>
+              <span class="sources-label">not tied to a specific article - inferred from your show profile</span>
+            </div>
+          {% endif %}
           <a class="btn btn-primary" href="{{ url_for('find_new', slug=slug, topic=t.guest_search_topic) }}">Find a Guest for This</a>
         </div>
       {% endfor %}

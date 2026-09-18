@@ -337,6 +337,12 @@ def topics_new(slug):
     recency = request.form.get("recency", "trending")
     form = {"seed": seed, "avoid": avoid, "recency": recency}
 
+    if not seed or not avoid:
+        return render_template(
+            "topics_form.html", slug=slug, form=form, topics=None,
+            error="Both fields are required - they're what makes suggestions specific to you instead of generic.",
+        )
+
     news_query, discussion_query = engine.build_topic_search_queries(profile, seed)
     try:
         news_results = engine.search_web(news_query, max_results=8, topic="news", days=14)
