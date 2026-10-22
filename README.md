@@ -179,9 +179,3 @@ dashboards at `/c/<slug>/` are **not** password-gated - separation there is
 by unguessable URL slug only, same tradeoff as before. Fine for early pilot
 clients you're handing links to directly; add per-client auth before this is
 public-facing or has more than a handful of clients.
-
-## Validate before building more
-
-Get 3-5 real podcast hosts using the web UI on their actual inbox and ask
-directly: is the ranking right, and would they pay for this? Don't build the
-episode-prep or content/voice modules until this piece proves itself.
